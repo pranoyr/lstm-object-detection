@@ -1,4 +1,4 @@
-# LSTM Object Detection in Pytorch
+# LSTM-SSD Object Detection in Pytorch
 
 ## Dependencies
 1. Python 3.6+
