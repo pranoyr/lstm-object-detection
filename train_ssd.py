@@ -239,6 +239,9 @@ if __name__ == '__main__':
     encoder = EncoderCNN()
     decoder = DecoderRNN()
 
+    encoder = encoder.to(DEVICE)
+    decoder = decoder.to(DEVICE)
+
     train_transform = TrainAugmentation(config.image_size, config.image_mean, config.image_std)
     target_transform = MatchPrior(config.priors, config.center_variance,
                                   config.size_variance, 0.5)
