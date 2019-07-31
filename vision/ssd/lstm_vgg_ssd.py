@@ -140,7 +140,7 @@ class DecoderRNN(nn.Module):
 
 	def forward(self, x_RNN):
     		
-		x_RNN_23 , x_RNN_final = x_RNN[0].to("cuda"), x_RNN[1].to("cuda")
+		x_RNN_23 , x_RNN_final = x_RNN[0], x_RNN[1]
 		
 		#self.ConvLSTM.flatten_parameters()
 		RNN_out_23, _ = self.ConvLSTM_23(x_RNN_23, None)  
