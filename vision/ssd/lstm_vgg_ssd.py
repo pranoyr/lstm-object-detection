@@ -114,7 +114,7 @@ class DecoderRNN(nn.Module):
 								input_dim=512,
 								hidden_dim=[64, 64, 512],
 								kernel_size=(3, 3),
-								num_layers=5,
+								num_layers=3,
 								batch_first=True,
 								bias=True,
 								return_all_layers=False)
@@ -123,7 +123,7 @@ class DecoderRNN(nn.Module):
 								input_dim=1024,
 								hidden_dim=[64, 64, 1024],
 								kernel_size=(3, 3),
-								num_layers=5,
+								num_layers=3,
 								batch_first=True,
 								bias=True,
 								return_all_layers=False)
