@@ -143,6 +143,7 @@ class DecoderRNN(nn.Module):
 		x_RNN_23 , x_RNN_final = x_RNN[0], x_RNN[1]
 		
 		#self.ConvLSTM.flatten_parameters()
+		print(x_RNN_23.device)
 		RNN_out_23, _ = self.ConvLSTM_23(x_RNN_23)  
 		""" h_n shape (n_layers, batch, hidden_size), h_c shape (n_layers, batch, hidden_size) """ 
 		""" None represents zero initial hidden state. RNN_out has shape=(time_step, batch, output_size) """
