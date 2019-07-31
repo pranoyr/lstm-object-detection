@@ -42,6 +42,9 @@ class ConvLSTMCell(nn.Module):
     def forward(self, input_tensor, cur_state):
         
         h_cur, c_cur = cur_state
+
+        h_cur = h_cur.to('cuda')
+        c_cur = c_cur.to('cuda')
         
         combined = torch.cat([input_tensor, h_cur], dim=1)  # concatenate along channel axis
         
