@@ -151,7 +151,7 @@ class VOCDataset:
                 np.array(is_difficult, dtype=np.uint8))
 
     def _read_image(self, image_id):
-        image_file = self.root / f"JPEGImages/{image_id}.jpg"
+        image_file = self.root / f"JPEGImages/{image_id}.png"
         image = cv2.imread(str(image_file))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         return image
