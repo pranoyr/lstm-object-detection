@@ -132,7 +132,7 @@ def train(loader, net, encoder, decoder, criterion, optimizer, device, debug_ste
         # timesteps, batch,  channel, height, width
         # torch.Size([2, 24, 512, 38, 38])
         out_enc_23, out_enc_final = encoder(videos)
-        out_dec_23, out_dec_final  = decoder([out_enc_23, out_enc_final])
+        out_dec_23, out_dec_final = decoder([out_enc_23, out_enc_final])
 
 
         # permute boxes and labels to match videos size
