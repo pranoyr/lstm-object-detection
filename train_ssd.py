@@ -139,6 +139,7 @@ def train(loader, net, encoder, decoder, criterion, optimizer, device, debug_ste
         out_enc_final = out_enc_final.to(device)
 
         print(out_enc_final.device)
+        print(out_enc_23.device)
         out_dec_23, out_dec_final = decoder([out_enc_23, out_enc_final])
         
 
