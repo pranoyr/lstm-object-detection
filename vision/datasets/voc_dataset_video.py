@@ -58,12 +58,14 @@ class VOCDataset:
 
         else:
             logging.info("No labels file, using default VOC classes.")
-            self.class_names = ('BACKGROUND',
-            'aeroplane', 'bicycle', 'bird', 'boat',
-            'bottle', 'bus', 'car', 'cat', 'chair',
-            'cow', 'diningtable', 'dog', 'horse',
-            'motorbike', 'person', 'pottedplant',
-            'sheep', 'sofa', 'train', 'tvmonitor')
+            # self.class_names = ('BACKGROUND',
+            # 'aeroplane', 'bicycle', 'bird', 'boat',
+            # 'bottle', 'bus', 'car', 'cat', 'chair',
+            # 'cow', 'diningtable', 'dog', 'horse',
+            # 'motorbike', 'person', 'pottedplant',
+            # 'sheep', 'sofa', 'train', 'tvmonitor')
+            
+            self.class_names = ('BACKGROUND','fire extinguisher','caution board','fence','truck')
 
 
         self.class_dict = {class_name: i for i, class_name in enumerate(self.class_names)}
