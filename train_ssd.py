@@ -126,13 +126,17 @@ def train(loader, net, encoder, decoder, criterion, optimizer, device, debug_ste
         # batch , timesteps, channel, height, width 
         #videos = torch.Tensor(2,2,3,300,300)  
         videos, videos_boxes, videos_labels = data
+        
         videos = videos.to(device)
+        videos_boxes = videos_boxes.to(device)
+        videos_labels = videos_labels.to(device)
 
        
         # timesteps, batch,  channel, height, width
         # torch.Size([2, 24, 512, 38, 38])
         out_enc_23, out_enc_final = encoder(videos)
         out_dec_23, out_dec_final = decoder([out_enc_23, out_enc_final])
+        
 
 
         # permute boxes and labels to match videos size
@@ -148,9 +152,6 @@ def train(loader, net, encoder, decoder, criterion, optimizer, device, debug_ste
 
             confidence, locations = net(images)
 
-
-            videos_boxes = videos_boxes.to(device)
-            videos_labels = videos_labels.to(device)
            
             #confidence, locations = net(images)
             regression_loss, classification_loss = criterion(confidence, locations, videos_labels[i], videos_boxes[i])  # TODO CHANGE BOXES
