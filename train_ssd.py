@@ -144,9 +144,9 @@ def train(loader, net, encoder, decoder, criterion, optimizer, device, debug_ste
         videos_labels = videos_labels.permute(1,0,2)
 
 
-        for i in range (out_dec_final.size(0)):
-            out_dec_23_batch =   out_dec_23[i,:,:,:,:] # get image batch for each time step
-            out_dec_final_batch = out_dec_final[i,:,:,:,:] # get image batch for each time step
+        for j in range (out_dec_final.size(0)):
+            out_dec_23_batch =   out_dec_23[j,:,:,:,:] # get image batch for each time step
+            out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
 
             images = [out_dec_23_batch , out_dec_final_batch]
 
@@ -154,7 +154,7 @@ def train(loader, net, encoder, decoder, criterion, optimizer, device, debug_ste
 
            
             #confidence, locations = net(images)
-            regression_loss, classification_loss = criterion(confidence, locations, videos_labels[i], videos_boxes[i])  # TODO CHANGE BOXES
+            regression_loss, classification_loss = criterion(confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
             loss = regression_loss + classification_loss
 
             # calculating loss for all timesteps
