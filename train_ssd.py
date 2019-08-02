@@ -163,8 +163,8 @@ def train(loader, net, encoder, decoder, criterion, optimizer, device, debug_ste
             total_classification_loss += classification_loss
 
 
-        total_loss.backward()
         optimizer.zero_grad()
+        total_loss.backward()
         optimizer.step()
 
         running_loss += total_loss.item()
