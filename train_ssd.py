@@ -164,19 +164,20 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
         total_loss.backward()
         optimizer.step()
 
-        running_loss += total_loss.item()
+        running_loss = total_loss.item()
         running_regression_loss += total_regression_loss.item()
         running_classification_loss += total_classification_loss.item()
         if i and i % debug_steps == 0:
             avg_loss = running_loss / debug_steps
             avg_reg_loss = running_regression_loss / debug_steps
             avg_clf_loss = running_classification_loss / debug_steps
-            logging.info(
-                f"Epoch: {epoch}, Step: {i}, " +
-                f"Average Loss: {avg_loss:.4f}, " +
-                f"Average Regression Loss {avg_reg_loss:.4f}, " +
-                f"Average Classification Loss: {avg_clf_loss:.4f}"
-            )
+            # logging.info(
+            #     f"Epoch: {epoch}, Step: {i}, " +
+            #     f"Average Loss: {avg_loss:.4f}, " +
+            #     f"Average Regression Loss {avg_reg_loss:.4f}, " +
+            #     f"Average Classification Loss: {avg_clf_loss:.4f}"
+            # )
+            print(running_loss)
             running_loss = 0.0
             running_regression_loss = 0.0
             running_classification_loss = 0.0
