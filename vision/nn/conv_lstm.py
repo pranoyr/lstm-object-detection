@@ -53,7 +53,7 @@ class ConvLSTMCell(nn.Module):
         cell_gate = f.tanh(cell_gate)
 
         # compute current cell and hidden state
-        cell = (remember_gate * prev_cell) + (in_gate * cell_gate)
+        cell = (remember_gate.to('cuda') * prev_cell.to('cuda')) + (in_gate.to('cuda') * cell_gate.to('cuda'))
         hidden = out_gate * f.tanh(cell)
 
         return hidden, cell
