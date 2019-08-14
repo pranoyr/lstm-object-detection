@@ -101,7 +101,8 @@ parser.add_argument('--checkpoint_folder', default='models/',
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 args = parser.parse_args()
-DEVICE = torch.device("cuda:0" if torch.cuda.is_available() and args.use_cuda else "cpu")
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available()
+                      and args.use_cuda else "cpu")
 
 if args.use_cuda and torch.cuda.is_available():
     torch.backends.cudnn.benchmark = True
@@ -121,39 +122,35 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
         total_regression_loss = 0.0
         total_classification_loss = 0.0
 
-
-        # batch , timesteps, channel, height, width 
-        #videos = torch.Tensor(2,2,3,300,300)  
+        # batch , timesteps, channel, height, width
+        #videos = torch.Tensor(2,2,3,300,300)
         videos, videos_boxes, videos_labels = data
 
         videos = videos.to(device)
         videos_boxes = videos_boxes.to(device)
         videos_labels = videos_labels.to(device)
 
-       
         # timesteps, batch,  channel, height, width
         # torch.Size([2, 24, 512, 38, 38])
         # out_enc_23, out_enc_final = encoder(videos)
         # out_dec_23, out_dec_final = decoder([out_enc_23, out_enc_final])
-        
 
-        # permute videos 
-        videos = videos.permute(1,0,2,3,4)
+        # permute videos
+        videos = videos.permute(1, 0, 2, 3, 4)
 
-        # permute boxes and labels to match videos size 
-        videos_boxes = videos_boxes.permute(1,0,2,3)
-        videos_labels = videos_labels.permute(1,0,2)
+        # permute boxes and labels to match videos size
+        videos_boxes = videos_boxes.permute(1, 0, 2, 3)
+        videos_labels = videos_labels.permute(1, 0, 2)
 
-        hidden_states =  [None for i in range(6)]
-        for j in range (videos.size(0)):
-            video =   videos[j,:,:,:,:] # get image batch for each time step
-            #out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
+        hidden_states = [None for i in range(6)]
+        for j in range(videos.size(0)):
+            video = videos[j, :, :, :, :]  # get image batch for each time step
+            # out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
 
             #images = [out_dec_23_batch , out_dec_final_batch]
 
-            hidden_states_list , confidence, locations = net(video, hidden_states)
+            hidden_states_list, confidence, locations = net(video, hidden_states)
 
-           
             #confidence, locations = net(images)
             regression_loss, classification_loss = criterion(confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
             loss = regression_loss + classification_loss
@@ -162,7 +159,6 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
             total_loss += loss
             total_regression_loss += regression_loss
             total_classification_loss += classification_loss
-
 
         optimizer.zero_grad()
         total_loss.backward()
@@ -201,7 +197,8 @@ def test(loader, net, criterion, device):
 
         with torch.no_grad():
             confidence, locations = net(images)
-            regression_loss, classification_loss = criterion(confidence, locations, labels, boxes)
+            regression_loss, classification_loss = criterion(
+                confidence, locations, labels, boxes)
             loss = regression_loss + classification_loss
 
         running_loss += loss.item()
@@ -227,7 +224,8 @@ if __name__ == '__main__':
         create_net = create_squeezenet_ssd_lite
         config = squeezenet_ssd_config
     elif args.net == 'mb2-ssd-lite':
-        create_net = lambda num: create_mobilenetv2_ssd_lite(num, width_mult=args.mb2_width_mult)
+        def create_net(num): return create_mobilenetv2_ssd_lite(
+            num, width_mult=args.mb2_width_mult)
         config = mobilenetv1_ssd_config
     elif args.net == 'resnet-18-ssd':
         create_net = create_resnet18_ssd
@@ -237,18 +235,19 @@ if __name__ == '__main__':
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-
     # encoder = EncoderCNN()
     # decoder = DecoderRNN()
 
     # encoder = encoder.to(DEVICE)
     # decoder = decoder.to(DEVICE)
 
-    train_transform = TrainAugmentation(config.image_size, config.image_mean, config.image_std)
+    train_transform = TrainAugmentation(
+        config.image_size, config.image_mean, config.image_std)
     target_transform = MatchPrior(config.priors, config.center_variance,
                                   config.size_variance, 0.5)
 
-    test_transform = TestTransform(config.image_size, config.image_mean, config.image_std)
+    test_transform = TestTransform(
+        config.image_size, config.image_mean, config.image_std)
 
     logging.info("Prepare training datasets.")
     datasets = []
@@ -256,14 +255,16 @@ if __name__ == '__main__':
         if args.dataset_type == 'voc':
             dataset = VOCDataset(dataset_path, transform=train_transform,
                                  target_transform=target_transform)
-            label_file = os.path.join(args.checkpoint_folder, "voc-model-labels.txt")
+            label_file = os.path.join(
+                args.checkpoint_folder, "voc-model-labels.txt")
             store_labels(label_file, dataset.class_names)
             num_classes = len(dataset.class_names)
         elif args.dataset_type == 'open_images':
             dataset = OpenImagesDataset(dataset_path,
-                 transform=train_transform, target_transform=target_transform,
-                 dataset_type="train", balance_data=args.balance_data)
-            label_file = os.path.join(args.checkpoint_folder, "open-images-model-labels.txt")
+                                        transform=train_transform, target_transform=target_transform,
+                                        dataset_type="train", balance_data=args.balance_data)
+            label_file = os.path.join(
+                args.checkpoint_folder, "open-images-model-labels.txt")
             store_labels(label_file, dataset.class_names)
             logging.info(dataset)
             num_classes = len(dataset.class_names)
@@ -317,7 +318,8 @@ if __name__ == '__main__':
         freeze_net_layers(net.base_net)
         freeze_net_layers(net.source_layer_add_ons)
         freeze_net_layers(net.extras)
-        params = itertools.chain(net.regression_headers.parameters(), net.classification_headers.parameters())
+        params = itertools.chain(
+            net.regression_headers.parameters(), net.classification_headers.parameters())
         logging.info("Freeze all the layers except prediction heads.")
     else:
         params = [
@@ -330,7 +332,7 @@ if __name__ == '__main__':
                 net.regression_headers.parameters(),
                 net.classification_headers.parameters()
             )},
-             {'params': itertools.chain(
+            {'params': itertools.chain(
                 net.LSTM_list.parameters()
             )}
         ]
@@ -360,10 +362,11 @@ if __name__ == '__main__':
         logging.info("Uses MultiStepLR scheduler.")
         milestones = [int(v.strip()) for v in args.milestones.split(",")]
         scheduler = MultiStepLR(optimizer, milestones=milestones,
-                                                     gamma=0.1, last_epoch=last_epoch)
+                                gamma=0.1, last_epoch=last_epoch)
     elif args.scheduler == 'cosine':
         logging.info("Uses CosineAnnealingLR scheduler.")
-        scheduler = CosineAnnealingLR(optimizer, args.t_max, last_epoch=last_epoch)
+        scheduler = CosineAnnealingLR(
+            optimizer, args.t_max, last_epoch=last_epoch)
     else:
         logging.fatal(f"Unsupported Scheduler: {args.scheduler}.")
         parser.print_help(sys.stderr)
@@ -374,7 +377,7 @@ if __name__ == '__main__':
         scheduler.step()
         train(train_loader, net, criterion, optimizer,
               device=DEVICE, debug_steps=args.debug_steps, epoch=epoch)
-        
+
         if epoch % args.validation_epochs == 0 or epoch == args.num_epochs - 1:
             # val_loss, val_regression_loss, val_classification_loss = test(val_loader, net, criterion, DEVICE)
             # logging.info(
@@ -382,7 +385,7 @@ if __name__ == '__main__':
             #     f"Validation Loss: {val_loss:.4f}, " +
             #     f"Validation Regression Loss {val_regression_loss:.4f}, " +
             #     f"Validation Classification Loss: {val_classification_loss:.4f}"
-            #)
+            # )
             model_path = os.path.join(args.checkpoint_folder, f"{args.net}-Epoch-{epoch}.pth")
             net.save(model_path)
             logging.info(f"Saved model {model_path}")
