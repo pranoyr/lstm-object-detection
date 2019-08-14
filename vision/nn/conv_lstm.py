@@ -1,172 +1,123 @@
-import torch.nn as nn
-from torch.autograd import Variable
 import torch
+from torch import nn
+import torch.nn.functional as f
+from torch.autograd import Variable
+
+
+# Define some constants
+KERNEL_SIZE = 3
+PADDING = KERNEL_SIZE // 2
 
 
 class ConvLSTMCell(nn.Module):
+    """
+    Generate a convolutional LSTM cell
+    """
 
-    def __init__(self, input_size, input_dim, hidden_dim, kernel_size, bias):
-        """
-        Initialize ConvLSTM cell.
-        
-        Parameters
-        ----------
-        input_size: (int, int)
-            Height and width of input tensor as (height, width).
-        input_dim: int
-            Number of channels of input tensor.
-        hidden_dim: int
-            Number of channels of hidden state.
-        kernel_size: (int, int)
-            Size of the convolutional kernel.
-        bias: bool
-            Whether or not to add the bias.
-        """
+    def __init__(self, input_size, hidden_size):
+        super().__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.Gates = nn.Conv2d(input_size + hidden_size, 4 * hidden_size, KERNEL_SIZE, padding=PADDING)
 
-        super(ConvLSTMCell, self).__init__()
+    def forward(self, input_, prev_state):
 
-        self.height, self.width = input_size
-        self.input_dim  = input_dim
-        self.hidden_dim = hidden_dim
+        # get batch and spatial sizes
+        batch_size = input_.data.size()[0]
+        spatial_size = input_.data.size()[2:]
 
-        self.kernel_size = kernel_size
-        self.padding     = kernel_size[0] // 2, kernel_size[1] // 2
-        self.bias        = bias
-        
-        self.conv = nn.Conv2d(in_channels=self.input_dim + self.hidden_dim,
-                              out_channels=4 * self.hidden_dim,
-                              kernel_size=self.kernel_size,
-                              padding=self.padding,
-                              bias=self.bias)
+        # generate empty prev_state, if None is provided
+        if prev_state is None:
+            state_size = [batch_size, self.hidden_size] + list(spatial_size)
+            prev_state = (
+                Variable(torch.zeros(state_size)),
+                Variable(torch.zeros(state_size))
+            )
 
-    def forward(self, input_tensor, cur_state):
-        
-        h_cur, c_cur = cur_state
+        prev_hidden, prev_cell = prev_state
 
-        # h_cur = h_cur.to('cuda')
-        # c_cur = h_cur.to('cuda')
-        
-        combined = torch.cat([input_tensor, h_cur], dim=1)  # concatenate along channel axis
-        
-        combined_conv = self.conv(combined)
-        cc_i, cc_f, cc_o, cc_g = torch.split(combined_conv, self.hidden_dim, dim=1) 
-        i = torch.sigmoid(cc_i)
-        f = torch.sigmoid(cc_f)
-        o = torch.sigmoid(cc_o)
-        g = torch.tanh(cc_g)
+        # data size is [batch, channel, height, width]
+        stacked_inputs = torch.cat((input_, prev_hidden), 1)
+        gates = self.Gates(stacked_inputs)
 
-        c_next = f * c_cur + i * g
-        h_next = o * torch.tanh(c_next)
-        
-        return h_next, c_next
+        # chunk across channel dimension
+        in_gate, remember_gate, out_gate, cell_gate = gates.chunk(4, 1)
 
-    def init_hidden(self, batch_size):
-        return (Variable(torch.zeros(batch_size, self.hidden_dim, self.height, self.width)).cuda(),
-                Variable(torch.zeros(batch_size, self.hidden_dim, self.height, self.width)).cuda())
+        # apply sigmoid non linearity
+        in_gate = f.sigmoid(in_gate)
+        remember_gate = f.sigmoid(remember_gate)
+        out_gate = f.sigmoid(out_gate)
+
+        # apply tanh non linearity
+        cell_gate = f.tanh(cell_gate)
+
+        # compute current cell and hidden state
+        cell = (remember_gate * prev_cell) + (in_gate * cell_gate)
+        hidden = out_gate * f.tanh(cell)
+
+        return hidden, cell
 
 
-class ConvLSTM(nn.Module):
+def _main():
+    """
+    Run some basic tests on the API
+    """
 
-    def __init__(self, input_size, input_dim, hidden_dim, kernel_size, num_layers,
-                 batch_first=False, bias=True, return_all_layers=False):
-        super(ConvLSTM, self).__init__()
+    # define batch_size, channels, height, width
+    b, c, h, w = 1, 3, 4, 8
+    d = 5           # hidden state size
+    lr = 1e-1       # learning rate
+    T = 6           # sequence length
+    max_epoch = 20  # number of epochs
 
-        self._check_kernel_size_consistency(kernel_size)
+    # set manual seed
+    torch.manual_seed(0)
 
-        # Make sure that both `kernel_size` and `hidden_dim` are lists having len == num_layers
-        kernel_size = self._extend_for_multilayer(kernel_size, num_layers)
-        hidden_dim  = self._extend_for_multilayer(hidden_dim, num_layers)
-        if not len(kernel_size) == len(hidden_dim) == num_layers:
-            raise ValueError('Inconsistent list length.')
+    print('Instantiate model')
+    model = ConvLSTMCell(3, 5)
+    print(repr(model))
 
-        self.height, self.width = input_size
+    print('Create input and target Variables')
+    x = Variable(torch.rand(T, b, c, h, w))
+    y = Variable(torch.randn(T, b, d, h, w))
 
-        self.input_dim  = input_dim
-        self.hidden_dim = hidden_dim
-        self.kernel_size = kernel_size
-        self.num_layers = num_layers
-        self.batch_first = batch_first
-        self.bias = bias
-        self.return_all_layers = return_all_layers
+    print('Create a MSE criterion')
+    loss_fn = nn.MSELoss()
 
-        cell_list = []
-        for i in range(0, self.num_layers):
-            cur_input_dim = self.input_dim if i == 0 else self.hidden_dim[i-1]
+    print('Run for', max_epoch, 'iterations')
+    for epoch in range(0, max_epoch):
+        state = None
+        loss = 0
+        for t in range(0, T):
+            print(x[t].size())
+            state = model(x[t], state)
+            #print(state[0].size())
+            #loss += loss_fn(state[0], y[t])
 
-            cell_list.append(ConvLSTMCell(input_size=(self.height, self.width),
-                                          input_dim=cur_input_dim,
-                                          hidden_dim=self.hidden_dim[i],
-                                          kernel_size=self.kernel_size[i],
-                                          bias=self.bias))
+        #print(' > Epoch {:2d} loss: {:.3f}'.format((epoch+1), loss.data[0]))
 
-        self.cell_list = nn.ModuleList(cell_list)
+        # zero grad parameters
+        #model.zero_grad()
 
-    def forward(self, input_tensor, hidden_state=None):
-        """
-        
-        Parameters
-        ----------
-        input_tensor: todo 
-            5-D Tensor either of shape (t, b, c, h, w) or (b, t, c, h, w)
-        hidden_state: todo
-            None. todo implement stateful
-            
-        Returns
-        -------
-        last_state_list, layer_output
-        """
-        if not self.batch_first:
-            # (t, b, c, h, w) -> (b, t, c, h, w)
-            input_tensor = input_tensor.permute(1, 0, 2, 3, 4)
+        # compute new grad parameters through time!
+        #loss.backward()
 
-        # Implement stateful ConvLSTM
-        if hidden_state is not None:
-            raise NotImplementedError()
-        else:
-            hidden_state = self._init_hidden(batch_size=input_tensor.size(0))
+        # learning_rate step against the gradient
+        #for p in model.parameters():
+        #    p.data.sub_(p.grad.data * lr)
 
-        layer_output_list = []
-        last_state_list   = []
+    print('Input size:', list(x.data.size()))
+    print('Target size:', list(y.data.size()))
+    print('Last hidden state size:', list(state[0].size()))
 
-        seq_len = input_tensor.size(1)
-        cur_layer_input = input_tensor
 
-        for layer_idx in range(self.num_layers):
+if __name__ == '__main__':
+    _main()
 
-            h, c = hidden_state[layer_idx]
-            output_inner = []
-            for t in range(seq_len):
 
-                h, c = self.cell_list[layer_idx](input_tensor=cur_layer_input[:, t, :, :, :],
-                                                 cur_state=[h, c])
-                output_inner.append(h)
-
-            layer_output = torch.stack(output_inner, dim=1)
-            cur_layer_input = layer_output
-
-            layer_output_list.append(layer_output)
-            last_state_list.append([h, c])
-
-        if not self.return_all_layers:
-            layer_output_list = layer_output_list[-1:]
-            last_state_list   = last_state_list[-1:]
-
-        return layer_output_list, last_state_list
-
-    def _init_hidden(self, batch_size):
-        init_states = []
-        for i in range(self.num_layers):
-            init_states.append(self.cell_list[i].init_hidden(batch_size))
-        return init_states
-
-    @staticmethod
-    def _check_kernel_size_consistency(kernel_size):
-        if not (isinstance(kernel_size, tuple) or
-                    (isinstance(kernel_size, list) and all([isinstance(elem, tuple) for elem in kernel_size]))):
-            raise ValueError('`kernel_size` must be tuple or list of tuples')
-
-    @staticmethod
-    def _extend_for_multilayer(param, num_layers):
-        if not isinstance(param, list):
-            param = [param] * num_layers
-        return param
+__author__ = "Alfredo Canziani"
+__credits__ = ["Alfredo Canziani"]
+__maintainer__ = "Alfredo Canziani"
+__email__ = "alfredo.canziani@gmail.com"
+__status__ = "Prototype"  # "Prototype", "Development", or "Production"
+__date__ = "Jan 17"

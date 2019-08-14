@@ -3,9 +3,12 @@ import torch
 import numpy as np
 from typing import List, Tuple
 import torch.nn.functional as F
+from vision.nn.conv_lstm import ConvLSTMCell
 
 from ..utils import box_utils
 from collections import namedtuple
+from torch.nn import ModuleList
+
 GraphPath = namedtuple("GraphPath", ['s0', 'name', 's1'])  #
 
 
@@ -26,6 +29,74 @@ class SSD(nn.Module):
         self.is_test = is_test
         self.config = config
 
+
+        self.LSTM_list = ModuleList([
+                            # ConvLSTM(input_size=(38, 38),
+							# 	input_dim=512,
+							# 	hidden_dim=[64, 64, 512],
+							# 	kernel_size=(3, 3),
+							# 	num_layers=3,
+							# 	batch_first=False,
+							# 	bias=True,
+							# 	return_all_layers=False),
+
+                            ConvLSTMCell(512, 512),
+
+                            # ConvLSTM(input_size=(19, 19),
+							# 	input_dim=1024,
+							# 	hidden_dim=[64, 64, 1024],
+							# 	kernel_size=(3, 3),
+							# 	num_layers=3,
+							# 	batch_first=False,
+							# 	bias=True,
+							# 	return_all_layers=False),
+
+                            ConvLSTMCell(1024, 1024),
+
+                            # ConvLSTM(input_size=(10, 10),
+							# 	input_dim=512,
+							# 	hidden_dim=[64, 64, 512],
+							# 	kernel_size=(3, 3),
+							# 	num_layers=3,
+							# 	batch_first=False,
+							# 	bias=True,
+							# 	return_all_layers=False),
+
+                            ConvLSTMCell(512, 512),
+
+                            # ConvLSTM(input_size=(5, 5),
+							# 	input_dim=256,
+							# 	hidden_dim=[64, 64, 256],
+							# 	kernel_size=(3, 3),
+							# 	num_layers=3,
+							# 	batch_first=False,
+							# 	bias=True,
+							# 	return_all_layers=False),
+
+                            ConvLSTMCell(256, 256),
+
+                            # ConvLSTM(input_size=(3, 3),
+							# 	input_dim=256,
+							# 	hidden_dim=[64, 64, 256],
+							# 	kernel_size=(3, 3),
+							# 	num_layers=3,
+							# 	batch_first=False,
+							# 	bias=True,
+							# 	return_all_layers=False),
+
+                            ConvLSTMCell(256, 256),
+
+                            # ConvLSTM(input_size=(1, 1),
+							# 	input_dim=256,
+							# 	hidden_dim=[64, 64, 256],
+							# 	kernel_size=(3, 3),
+							# 	num_layers=3,
+							# 	batch_first=False,
+							# 	bias=True,
+							# 	return_all_layers=False)])
+
+                            ConvLSTMCell(256, 256)])
+
         # register layers in source_layer_indexes by adding them to a module list
         self.source_layer_add_ons = nn.ModuleList([t[1] for t in source_layer_indexes
                                                    if isinstance(t, tuple) and not isinstance(t, GraphPath)])
@@ -37,50 +108,70 @@ class SSD(nn.Module):
             self.config = config
             self.priors = config.priors.to(self.device)
             
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor, hidden_states) -> Tuple[torch.Tensor, torch.Tensor]:
         confidences = []
         locations = []
         start_layer_index = 0
         header_index = 0
-        for i,end_layer_index in enumerate(self.source_layer_indexes):
-            # if isinstance(end_layer_index, GraphPath):
-            #     path = end_layer_index
-            #     end_layer_index = end_layer_index.s0
-            #     added_layer = None
-            # elif isinstance(end_layer_index, tuple):
-            #     added_layer = end_layer_index[1]
-            #     end_layer_index = end_layer_index[0]
-            #     path = None
-            # else:
-            #     added_layer = None
-            #     path = None
-            # for layer in self.base_net[start_layer_index: end_layer_index]:
-            #     x = layer(x)
-            # if added_layer:
-            #     y = added_layer(x)
-            # else:
-            #     y = x
-            # if path:
-            #     sub = getattr(self.base_net[end_layer_index], path.name)
-            #     for layer in sub[:path.s1]:
-            #         x = layer(x)
-            #     y = x
-            #     for layer in sub[path.s1:]:
-            #         x = layer(x)
-            #     end_layer_index += 1
-            # start_layer_index = end_layer_index
-            confidence, location = self.compute_header(header_index, x[i])
+        for i, end_layer_index in enumerate(self.source_layer_indexes):
+            if isinstance(end_layer_index, GraphPath):
+                path = end_layer_index
+                end_layer_index = end_layer_index.s0
+                added_layer = None
+            elif isinstance(end_layer_index, tuple):
+                added_layer = end_layer_index[1]
+                end_layer_index = end_layer_index[0]
+                path = None
+            else:
+                added_layer = None
+                path = None
+            for layer in self.base_net[start_layer_index: end_layer_index]:
+                x = layer(x)
+            if added_layer:
+                y = added_layer(x)
+            else:
+                y = x
+            if path:
+                sub = getattr(self.base_net[end_layer_index], path.name)
+                for layer in sub[:path.s1]:
+                    x = layer(x)
+                y = x
+                for layer in sub[path.s1:]:
+                    x = layer(x)
+                end_layer_index += 1
+            start_layer_index = end_layer_index
+
+     
+            # add axis for timestep
+            #y = torch.unsqueeze(y, 0)
+            # CONV-LSTM
+            state = self.LSTM_list[i](y, hidden_states[i])
+            # save hidden states for next timestep
+            hidden_states[i] = state
+            # get the output
+            y = state[0]
+
+
+            confidence, location = self.compute_header(header_index, y)
             header_index += 1
             confidences.append(confidence)
             locations.append(location)
 
-        # for layer in self.base_net[end_layer_index:]:
-        #     x = layer(x)
-
-        x = x[1]
-
-        for layer in self.extras:
+        for layer in self.base_net[end_layer_index:]:
             x = layer(x)
+
+        for i, layer in enumerate(self.extras):
+            x = layer(x)
+            
+            # add axis for timestep
+            #x = torch.unsqueeze(x, 0)
+            # CONV-LSTM
+            state = self.LSTM_list[i + 2](x, hidden_states[i+2])
+            # save hidden states for next timestep
+            hidden_states[i+2] = state
+            # get the output
+            x = state[0]
+
             confidence, location = self.compute_header(header_index, x)
             header_index += 1
             confidences.append(confidence)
@@ -99,7 +190,7 @@ class SSD(nn.Module):
         else:
             # print(locations.size())
             # print(confidence.size())
-            return confidences, locations
+            return hidden_states,  confidences, locations
 
        
 

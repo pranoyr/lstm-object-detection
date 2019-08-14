@@ -4,11 +4,10 @@ import logging
 import sys
 import itertools
 
+
 import torch
 from torch.utils.data import DataLoader, ConcatDataset
 from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
-from vision.ssd.lstm_vgg_ssd import EncoderCNN
-from vision.ssd.lstm_vgg_ssd import DecoderRNN
 from vision.utils.misc import str2bool, Timer, freeze_net_layers, store_labels
 from vision.ssd.ssd import MatchPrior
 from vision.ssd.vgg_ssd import create_vgg_ssd
@@ -109,10 +108,10 @@ if args.use_cuda and torch.cuda.is_available():
     logging.info("Use Cuda.")
 
 
-def train(loader, net, encoder, decoder, criterion, optimizer, device, debug_steps=100, epoch=-1):
+def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
     net.train(True)
-    encoder.train()
-    decoder.train()
+    # encoder.train()
+    # decoder.train()
 
     running_loss = 0.0
     running_regression_loss = 0.0
@@ -134,23 +133,25 @@ def train(loader, net, encoder, decoder, criterion, optimizer, device, debug_ste
        
         # timesteps, batch,  channel, height, width
         # torch.Size([2, 24, 512, 38, 38])
-        out_enc_23, out_enc_final = encoder(videos)
-        out_dec_23, out_dec_final = decoder([out_enc_23, out_enc_final])
+        # out_enc_23, out_enc_final = encoder(videos)
+        # out_dec_23, out_dec_final = decoder([out_enc_23, out_enc_final])
         
 
+        # permute videos 
+        videos = videos.permute(1,0,2,3,4)
 
-        # permute boxes and labels to match videos size
+        # permute boxes and labels to match videos size 
         videos_boxes = videos_boxes.permute(1,0,2,3)
         videos_labels = videos_labels.permute(1,0,2)
 
+        hidden_states =  [None for i in range(6)]
+        for j in range (videos.size(0)):
+            video =   videos[j,:,:,:,:] # get image batch for each time step
+            #out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
 
-        for j in range (out_dec_final.size(0)):
-            out_dec_23_batch =   out_dec_23[j,:,:,:,:] # get image batch for each time step
-            out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
+            #images = [out_dec_23_batch , out_dec_final_batch]
 
-            images = [out_dec_23_batch , out_dec_final_batch]
-
-            confidence, locations = net(images)
+            hidden_states_list , confidence, locations = net(video, hidden_states)
 
            
             #confidence, locations = net(images)
@@ -237,11 +238,11 @@ if __name__ == '__main__':
         sys.exit(1)
 
 
-    encoder = EncoderCNN()
-    decoder = DecoderRNN()
+    # encoder = EncoderCNN()
+    # decoder = DecoderRNN()
 
-    encoder = encoder.to(DEVICE)
-    decoder = decoder.to(DEVICE)
+    # encoder = encoder.to(DEVICE)
+    # decoder = decoder.to(DEVICE)
 
     train_transform = TrainAugmentation(config.image_size, config.image_mean, config.image_std)
     target_transform = MatchPrior(config.priors, config.center_variance,
@@ -330,8 +331,7 @@ if __name__ == '__main__':
                 net.classification_headers.parameters()
             )},
              {'params': itertools.chain(
-                encoder.parameters(),
-                decoder.parameters()
+                net.LSTM_list.parameters()
             )}
         ]
 
@@ -372,7 +372,7 @@ if __name__ == '__main__':
     logging.info(f"Start training from epoch {last_epoch + 1}.")
     for epoch in range(last_epoch + 1, args.num_epochs):
         scheduler.step()
-        train(train_loader, net, encoder, decoder, criterion, optimizer,
+        train(train_loader, net, criterion, optimizer,
               device=DEVICE, debug_steps=args.debug_steps, epoch=epoch)
         
         if epoch % args.validation_epochs == 0 or epoch == args.num_epochs - 1:
