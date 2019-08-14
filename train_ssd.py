@@ -142,14 +142,14 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
         videos_boxes = videos_boxes.permute(1, 0, 2, 3)
         videos_labels = videos_labels.permute(1, 0, 2)
 
-        hidden_states = [None for i in range(6)]
+        hidden_states_list = [None for i in range(6)]
         for j in range(videos.size(0)):
             video = videos[j, :, :, :, :]  # get image batch for each time step
             # out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
 
             #images = [out_dec_23_batch , out_dec_final_batch]
 
-            hidden_states_list, confidence, locations = net(video, hidden_states)
+            hidden_states_list, confidence, locations = net(video, hidden_states_list)
 
             #confidence, locations = net(images)
             regression_loss, classification_loss = criterion(confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
@@ -164,20 +164,19 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
         total_loss.backward()
         optimizer.step()
 
-        running_loss = total_loss.item()
+        running_loss += total_loss.item()
         running_regression_loss += total_regression_loss.item()
         running_classification_loss += total_classification_loss.item()
         if i and i % debug_steps == 0:
             avg_loss = running_loss / debug_steps
             avg_reg_loss = running_regression_loss / debug_steps
             avg_clf_loss = running_classification_loss / debug_steps
-            # logging.info(
-            #     f"Epoch: {epoch}, Step: {i}, " +
-            #     f"Average Loss: {avg_loss:.4f}, " +
-            #     f"Average Regression Loss {avg_reg_loss:.4f}, " +
-            #     f"Average Classification Loss: {avg_clf_loss:.4f}"
-            # )
-            print(running_loss)
+            logging.info(
+                f"Epoch: {epoch}, Step: {i}, " +
+                f"Average Loss: {avg_loss:.4f}, " +
+                f"Average Regression Loss {avg_reg_loss:.4f}, " +
+                f"Average Classification Loss: {avg_clf_loss:.4f}"
+            )
             running_loss = 0.0
             running_regression_loss = 0.0
             running_classification_loss = 0.0
