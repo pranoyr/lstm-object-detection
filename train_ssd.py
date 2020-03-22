@@ -119,10 +119,6 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
     running_regression_loss = 0.0
     running_classification_loss = 0.0
     for i, data in enumerate(loader):
-        total_loss = 0.0
-        total_regression_loss = 0.0
-        total_classification_loss = 0.0
-
         # batch , timesteps, channel, height, width
         #videos = torch.Tensor(2,2,3,300,300)
         videos, videos_boxes, videos_labels = data
@@ -157,19 +153,21 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
             regression_loss, classification_loss = criterion(confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
             loss = regression_loss + classification_loss
 
+
+            optimizer.zero_grad()
+            loss.backward(retain_graph=True)
+            
+
             # calculating loss for all timesteps
-            total_loss += loss
-            total_regression_loss += regression_loss
-            total_classification_loss += classification_loss
+            running_loss += loss
+            running_regression_loss += regression_loss
+            running_classification_loss += classification_loss
 
 
-        optimizer.zero_grad()
-        total_loss.backward(retain_graph=True)
-        optimizer.step()
 
-        running_loss += total_loss.item()
-        running_regression_loss += total_regression_loss.item()
-        running_classification_loss += total_classification_loss.item()
+        # running_loss += total_loss.item()
+        # running_regression_loss += total_regression_loss.item()
+        # running_classification_loss += total_classification_loss.item()
         if i and i % debug_steps == 0:
             avg_loss = running_loss / debug_steps
             avg_reg_loss = running_regression_loss / debug_steps
