@@ -190,8 +190,10 @@ def _main():
 		print(x[t].size())
 		state = model(x[t])
 
-		model.hidden_state.detach()
-		model.cell_state.detach()
+
+		print(model.hidden_state.detach_())
+		print(model.cell_state.detach_())
+	
 		# print(state[0].size())
 		#loss += loss_fn(state[0], y[t])
 
