@@ -79,8 +79,7 @@ class ConvLSTMCell(nn.Module):
 
 		# compute current cell and hidden state
 		cell = (remember_gate.to("cpu") * prev_cell.to("cpu")) + (in_gate.to("cpu") * cell_gate.to("cpu"))
-		print(out_gate.device)
-		print(cell.device)
+		out_gate = out_gate.to("cpu")
 		hidden = out_gate * f.tanh(cell)
 
 		self.prev_state = (hidden, cell)
