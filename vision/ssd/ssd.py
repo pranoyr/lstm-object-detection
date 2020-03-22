@@ -233,6 +233,26 @@ class SSD(nn.Module):
 		self.classification_headers.apply(_xavier_init_)
 		self.regression_headers.apply(_xavier_init_)
 
+	def detach_all(self):
+		self.BottleneckLSTM_1.hidden_state.detach()
+		self.BottleneckLSTM_1.cell_state.detach()
+
+		self.BottleneckLSTM_2.hidden_state.detach()
+		self.BottleneckLSTM_2.cell_state.detach()
+
+		self.BottleneckLSTM_3.hidden_state.detach()
+		self.BottleneckLSTM_3.cell_state.detach()
+
+		self.BottleneckLSTM_4.hidden_state.detach()
+		self.BottleneckLSTM_4.cell_state.detach()
+
+		self.BottleneckLSTM_5.hidden_state.detach()
+		self.BottleneckLSTM_5.cell_state.detach()
+
+		self.BottleneckLSTM_6.hidden_state.detach()
+		self.BottleneckLSTM_6.cell_state.detach()
+		
+
 	def init_from_pretrained_ssd(self, model):
 		state_dict = torch.load(
 			model, map_location=lambda storage, loc: storage)

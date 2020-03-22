@@ -36,8 +36,9 @@ class ConvLSTMCell(nn.Module):
 			nn.Conv2d(input_size + hidden_size, hidden_size, KERNEL_SIZE, padding=PADDING),
 			nn.ReLU())
 		self.Gates = nn.Conv2d(hidden_size, 4 * hidden_size, KERNEL_SIZE, padding=PADDING)
-		self.prev_state = None
-		self.device = torch.device("cuda")
+		self.hidden_state = None
+		self.cell_state = None
+		self.device = torch.device("cpu")
 
 	def forward(self, input_):
 
@@ -46,20 +47,17 @@ class ConvLSTMCell(nn.Module):
 		spatial_size = input_.data.size()[2:]
 
 		# generate empty prev_state, if None is provided
-		if self.prev_state is None:
+		if self.hidden_state is None:
 			state_size = [batch_size, self.hidden_size] + list(spatial_size)
-			prev_state = (
+			self.hidden_state, self.cell_state  = (
 				Variable(torch.zeros(state_size)),
 				Variable(torch.zeros(state_size))
 			)
-		else:
-			prev_state = self.prev_state
 
-		prev_hidden, prev_cell = prev_state
 
 		# data size is [batch, channel, height, width]
-		prev_hidden = prev_hidden.to(self.device)
-		stacked_inputs = torch.cat((input_, prev_hidden), 1)
+		self.hidden_state = self.hidden_state.to(self.device)
+		stacked_inputs = torch.cat((input_, self.hidden_state), 1)
 
 		stacked_inputs = self.bottleneck_gate(stacked_inputs)
 
@@ -77,10 +75,13 @@ class ConvLSTMCell(nn.Module):
 		cell_gate = f.tanh(cell_gate)
 
 		# compute current cell and hidden state
-		cell = (remember_gate.to(self.device) * prev_cell.to(self.device)) + (in_gate.to(self.device) * cell_gate.to(self.device))
+		cell = (remember_gate.to(self.device) * self.cell_state.to(self.device)) + (in_gate.to(self.device) * cell_gate.to(self.device))
 		hidden = out_gate * f.tanh(cell)
 
-		self.prev_state = (hidden, cell)
+		# self.prev_state = (hidden, cell)
+
+		self.hidden_state = hidden
+		self.cell_state =  cell
 
 		return hidden, cell
 
@@ -188,7 +189,9 @@ def _main():
 	for t in range(0, T):
 		print(x[t].size())
 		state = model(x[t])
-		break
+
+		model.hidden_state.detach()
+		model.cell_state.detach()
 		# print(state[0].size())
 		#loss += loss_fn(state[0], y[t])
 
