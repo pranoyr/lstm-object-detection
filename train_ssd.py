@@ -161,9 +161,9 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
             
 
             # calculating loss for all timesteps
-            running_loss += loss
-            running_regression_loss += regression_loss
-            running_classification_loss += classification_loss
+            running_loss += loss.item()
+            running_regression_loss += regression_loss.item()
+            running_classification_loss += classification_loss.item()
 
         # net.zero_grad()
         # running_loss += total_loss.item()
