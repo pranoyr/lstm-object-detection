@@ -37,7 +37,7 @@ class ConvLSTMCell(nn.Module):
 			nn.ReLU())
 		self.Gates = nn.Conv2d(hidden_size, 4 * hidden_size, KERNEL_SIZE, padding=PADDING)
 		self.prev_state = None
-		self.device = torch.device("cuda")
+		self.device = torch.device("cpu")
 
 	def forward(self, input_):
 
@@ -59,6 +59,7 @@ class ConvLSTMCell(nn.Module):
 
 		# data size is [batch, channel, height, width]
 		prev_hidden = prev_hidden.to(self.device)
+		prev_hidden = input_.to(self.device)
 		stacked_inputs = torch.cat((input_, prev_hidden), 1)
 
 		stacked_inputs = self.bottleneck_gate(stacked_inputs)
