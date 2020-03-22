@@ -119,6 +119,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
     running_regression_loss = 0.0
     running_classification_loss = 0.0
     for i, data in enumerate(loader):
+    
         # batch , timesteps, channel, height, width
         #videos = torch.Tensor(2,2,3,300,300)
         videos, videos_boxes, videos_labels = data
@@ -156,16 +157,15 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
 
             optimizer.zero_grad()
             loss.backward(retain_graph=True)
-            optimizer.step()
             
 
             # calculating loss for all timesteps
-            running_loss += loss.item()
-            running_regression_loss += regression_loss.item()
-            running_classification_loss += classification_loss.item()
+            total_loss += loss
+            total_regression_loss += regression_loss
+            total_classification_loss += classification_loss
 
-
-
+        net.zero_grad()
+        net.hidden.detach()
         # running_loss += total_loss.item()
         # running_regression_loss += total_regression_loss.item()
         # running_classification_loss += total_classification_loss.item()
