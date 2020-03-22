@@ -165,7 +165,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
             running_regression_loss += regression_loss
             running_classification_loss += classification_loss
 
-        net.zero_grad()
+        # net.zero_grad()
         net.detach_all()
         # running_loss += total_loss.item()
         # running_regression_loss += total_regression_loss.item()
