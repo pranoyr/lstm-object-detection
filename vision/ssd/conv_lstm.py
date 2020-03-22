@@ -37,7 +37,7 @@ class ConvLSTMCell(nn.Module):
 			nn.ReLU())
 		self.Gates = nn.Conv2d(hidden_size, 4 * hidden_size, KERNEL_SIZE, padding=PADDING)
 		self.prev_state = None
-		self.device = torch.device("cpu")
+		self.device = torch.device("cuda")
 
 	def forward(self, input_):
 
@@ -78,7 +78,7 @@ class ConvLSTMCell(nn.Module):
 		cell_gate = f.tanh(cell_gate)
 
 		# compute current cell and hidden state
-		cell = (remember_gate.to(self.device) * prev_cell.to(self.device)) + (in_gate.to(self.device) * cell_gate.to(self.device))
+		cell = (remember_gate.to("cpu") * prev_cell.to("cpu")) + (in_gate.to("cpu") * cell_gate.to("cpu"))
 		hidden = out_gate * f.tanh(cell)
 
 		self.prev_state = (hidden, cell)
