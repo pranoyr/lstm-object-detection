@@ -5,10 +5,10 @@ from typing import List, Tuple
 import torch.nn.functional as F
 
 
-from ..utils import box_utils
+# from ..utils import box_utils
 from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
 from .conv_lstm import ConvLSTMCell
-# import mobilenetv1_ssd_config as config
+import mobilenetv1_ssd_config as config
 
 # borrowed from "https://github.com/marvis/pytorch-mobilenet"
 

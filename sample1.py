@@ -1,15 +1,9 @@
-import cv2
-import numpy as np
-img1 = cv2.imread('/Users/pranoyr/PycharmProjects/Pytorch/lstm-object-detection-new/data/JPEGImages/000005.jpg')
-img2 = cv2.imread('/Users/pranoyr/PycharmProjects/Pytorch/lstm-object-detection-new/data/JPEGImages/000007.jpg')
-img3 = cv2.imread('/Users/pranoyr/PycharmProjects/Pytorch/lstm-object-detection-new/data/JPEGImages/000009.jpg')
-img4 = cv2.imread('/Users/pranoyr/PycharmProjects/Pytorch/lstm-object-detection-new/data/JPEGImages/0000012.jpg')
-img5 = cv2.imread('/Users/pranoyr/PycharmProjects/Pytorch/lstm-object-detection-new/data/JPEGImages/0000016.jpg')
+import torch.nn as nn
+import torch
 
+layer = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3)
 
-print(img1.shape)
-video = np.array([img1,img2,img3,img4,img5])
+i = torch.Tensor(32, 3, 28, 28)
 
-
-for i in video:
-	print(i.shape)
+out = layer(i)
+print(out.shape)

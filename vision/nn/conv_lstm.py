@@ -19,20 +19,23 @@ class ConvLSTMCell(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.Gates = nn.Conv2d(input_size + hidden_size, 4 * hidden_size, KERNEL_SIZE, padding=PADDING)
+        self.prev_state = None
 
-    def forward(self, input_, prev_state):
+    def forward(self, input_):
 
         # get batch and spatial sizes
         batch_size = input_.data.size()[0]
         spatial_size = input_.data.size()[2:]
 
         # generate empty prev_state, if None is provided
-        if prev_state is None:
+        if self.prev_state is None:
             state_size = [batch_size, self.hidden_size] + list(spatial_size)
             prev_state = (
                 Variable(torch.zeros(state_size)),
                 Variable(torch.zeros(state_size))
             )
+        else:
+            prev_state = self.prev_state
 
         prev_hidden, prev_cell = prev_state
 
@@ -56,6 +59,8 @@ class ConvLSTMCell(nn.Module):
         cell = (remember_gate.to('cpu') * prev_cell.to('cpu')) + (in_gate.to('cpu') * cell_gate.to('cpu'))
         hidden = out_gate * f.tanh(cell)
 
+        self.prev_state = (hidden, cell)
+
         return hidden, cell
 
 
@@ -75,7 +80,7 @@ def _main():
     torch.manual_seed(0)
 
     print('Instantiate model')
-    model = ConvLSTMCell(3, 5)
+    model = ConvLSTMCell(3, 512)
     print(repr(model))
 
     print('Create input and target Variables')
@@ -85,13 +90,12 @@ def _main():
     print('Create a MSE criterion')
     loss_fn = nn.MSELoss()
 
-    print('Run for', max_epoch, 'iterations')
-    for epoch in range(0, max_epoch):
-        state = None
-        loss = 0
-        for t in range(0, T):
-            print(x[t].size())
-            state = model(x[t], state)
+    state = None
+    loss = 0
+    for t in range(0, T):
+        print(x[t].size())
+        state = model(x[t])
+        break
             #print(state[0].size())
             #loss += loss_fn(state[0], y[t])
 

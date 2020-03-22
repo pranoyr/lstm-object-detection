@@ -10,18 +10,19 @@ from torch.utils.data import DataLoader, ConcatDataset
 from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
 from vision.utils.misc import str2bool, Timer, freeze_net_layers, store_labels
 from vision.ssd.ssd import MatchPrior
-from vision.ssd.vgg_ssd import create_vgg_ssd
-from vision.ssd.mobilenetv1_ssd import create_mobilenetv1_ssd
-from vision.ssd.mobilenetv1_ssd_lite import create_mobilenetv1_ssd_lite
-from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite
-from vision.ssd.squeezenet_ssd_lite import create_squeezenet_ssd_lite
-from vision.ssd.resnet50_ssd1 import create_resnet18_ssd
+# from vision.ssd.vgg_ssd import create_vgg_ssd
+# from vision.ssd.mobilenetv1_ssd import create_mobilenetv1_ssd
+# from vision.ssd.mobilenetv1_ssd_lite import create_mobilenetv1_ssd_lite
+# from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite
+# from vision.ssd.squeezenet_ssd_lite import create_squeezenet_ssd_lite
+# from vision.ssd.resnet50_ssd1 import create_resnet18_ssd
+from vision.ssd.ssd import SSD
 from vision.datasets.voc_dataset_video import VOCDataset
 from vision.datasets.open_images import OpenImagesDataset
 from vision.nn.multibox_loss import MultiboxLoss
-from vision.ssd.config import vgg_ssd_config
+# from vision.ssd.config import vgg_ssd_config
 from vision.ssd.config import mobilenetv1_ssd_config
-from vision.ssd.config import squeezenet_ssd_config
+# from vision.ssd.config import squeezenet_ssd_config
 from vision.ssd.data_preprocessing import TrainAugmentation, TestTransform
 
 parser = argparse.ArgumentParser(
@@ -138,18 +139,19 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
         # permute videos
         videos = videos.permute(1, 0, 2, 3, 4)
 
+    
+
         # permute boxes and labels to match videos size
         videos_boxes = videos_boxes.permute(1, 0, 2, 3)
         videos_labels = videos_labels.permute(1, 0, 2)
 
-        hidden_states_list = [None for i in range(6)]
         for j in range(videos.size(0)):
             video = videos[j, :, :, :, :]  # get image batch for each time step
             # out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
 
             #images = [out_dec_23_batch , out_dec_final_batch]
 
-            hidden_states_list, confidence, locations = net(video, hidden_states_list)
+            confidence, locations = net(video)
 
             #confidence, locations = net(images)
             regression_loss, classification_loss = criterion(confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
@@ -160,8 +162,9 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
             total_regression_loss += regression_loss
             total_classification_loss += classification_loss
 
+
         optimizer.zero_grad()
-        total_loss.backward()
+        total_loss.backward(retain_graph=True)
         optimizer.step()
 
         running_loss += total_loss.item()
@@ -211,25 +214,28 @@ if __name__ == '__main__':
     timer = Timer()
 
     logging.info(args)
-    if args.net == 'vgg16-ssd':
-        create_net = create_vgg_ssd
-        config = vgg_ssd_config
-    elif args.net == 'mb1-ssd':
-        create_net = create_mobilenetv1_ssd
+    # if args.net == 'vgg16-ssd':
+    #     create_net = create_vgg_ssd
+    #     config = vgg_ssd_config
+    # elif args.net == 'mb1-ssd':
+    #     create_net = create_mobilenetv1_ssd
+    #     config = mobilenetv1_ssd_config
+    # elif args.net == 'mb1-ssd-lite':
+    #     create_net = create_mobilenetv1_ssd_lite
+    #     config = mobilenetv1_ssd_config
+    # elif args.net == 'sq-ssd-lite':
+    #     create_net = create_squeezenet_ssd_lite
+    #     config = squeezenet_ssd_config
+    # elif args.net == 'mb2-ssd-lite':
+    #     def create_net(num): return create_mobilenetv2_ssd_lite(
+    #         num, width_mult=args.mb2_width_mult)
+    #     config = mobilenetv1_ssd_config
+    # elif args.net == 'resnet-18-ssd':
+    #     create_net = create_resnet18_ssd
+    #     config = vgg_ssd_config
+    if args.net == 'lstm-ssd':
+        create_net = SSD
         config = mobilenetv1_ssd_config
-    elif args.net == 'mb1-ssd-lite':
-        create_net = create_mobilenetv1_ssd_lite
-        config = mobilenetv1_ssd_config
-    elif args.net == 'sq-ssd-lite':
-        create_net = create_squeezenet_ssd_lite
-        config = squeezenet_ssd_config
-    elif args.net == 'mb2-ssd-lite':
-        def create_net(num): return create_mobilenetv2_ssd_lite(
-            num, width_mult=args.mb2_width_mult)
-        config = mobilenetv1_ssd_config
-    elif args.net == 'resnet-18-ssd':
-        create_net = create_resnet18_ssd
-        config = vgg_ssd_config
     else:
         logging.fatal("The net type is wrong.")
         parser.print_help(sys.stderr)
@@ -325,16 +331,19 @@ if __name__ == '__main__':
         params = [
             {'params': net.base_net.parameters(), 'lr': base_net_lr},
             {'params': itertools.chain(
-                net.source_layer_add_ons.parameters(),
                 net.extras.parameters()
             ), 'lr': extra_layers_lr},
             {'params': itertools.chain(
                 net.regression_headers.parameters(),
                 net.classification_headers.parameters()
             )},
-            {'params': itertools.chain(
-                net.LSTM_list.parameters()
-            )}
+            {'params': net.BottleneckLSTM_1.parameters()},
+            {'params': net.BottleneckLSTM_2.parameters()},
+            {'params': net.BottleneckLSTM_3.parameters()},
+            {'params': net.BottleneckLSTM_4.parameters()},
+            {'params': net.BottleneckLSTM_5.parameters()},
+            {'params': net.conv_13.parameters()}
+  
         ]
 
     timer.start("Load Model")
@@ -350,11 +359,11 @@ if __name__ == '__main__':
     logging.info(f'Took {timer.end("Load Model"):.2f} seconds to load the model.')
 
     net.to(DEVICE)
+    print(net.parameters)
 
     criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=3,
                              center_variance=0.1, size_variance=0.2, device=DEVICE)
-    optimizer = torch.optim.SGD(params, lr=args.lr, momentum=args.momentum,
-                                weight_decay=args.weight_decay)
+    optimizer = torch.optim.RMSprop(params, lr=0.003)
     logging.info(f"Learning rate: {args.lr}, Base net learning rate: {base_net_lr}, "
                  + f"Extra Layers learning rate: {extra_layers_lr}.")
 
