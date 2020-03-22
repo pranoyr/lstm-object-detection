@@ -58,8 +58,6 @@ class ConvLSTMCell(nn.Module):
 		prev_hidden, prev_cell = prev_state
 
 		# data size is [batch, channel, height, width]
-		prev_hidden = prev_hidden.to(self.device)
-		input_ = input_.to(self.device)
 		stacked_inputs = torch.cat((input_, prev_hidden), 1)
 
 		stacked_inputs = self.bottleneck_gate(stacked_inputs)
@@ -78,14 +76,10 @@ class ConvLSTMCell(nn.Module):
 		cell_gate = f.tanh(cell_gate)
 
 		# compute current cell and hidden state
-		cell = (remember_gate.to("cpu") * prev_cell.to("cpu")) + (in_gate.to("cpu") * cell_gate.to("cpu"))
-		out_gate = out_gate.to("cpu")
+		cell = (remember_gate.to(self.device) * prev_cell.to(self.device)) + (in_gate.to(self.device) * cell_gate.to(self.device))
 		hidden = out_gate * f.tanh(cell)
 
 		self.prev_state = (hidden, cell)
-
-		hidden = hidden.to("cuda")
-
 
 		return hidden, cell
 
