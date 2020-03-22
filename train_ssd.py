@@ -243,11 +243,6 @@ if __name__ == '__main__':
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    # encoder = EncoderCNN()
-    # decoder = DecoderRNN()
-
-    # encoder = encoder.to(DEVICE)
-    # decoder = decoder.to(DEVICE)
 
     train_transform = TrainAugmentation(
         config.image_size, config.image_mean, config.image_std)
