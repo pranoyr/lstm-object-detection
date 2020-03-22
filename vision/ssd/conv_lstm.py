@@ -58,6 +58,7 @@ class ConvLSTMCell(nn.Module):
 
 		# data size is [batch, channel, height, width]
 		prev_hidden = prev_hidden.to('cpu')
+		print(type(input_))
 		stacked_inputs = torch.cat((input_, prev_hidden), 1)
 
 		stacked_inputs = self.bottleneck_gate(stacked_inputs)
