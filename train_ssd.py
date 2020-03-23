@@ -156,7 +156,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 
 
             optimizer.zero_grad()
-            loss.backward(retain_graph=True)
+            loss.backward()
             optimizer.step()
             
 

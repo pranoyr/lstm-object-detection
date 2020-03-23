@@ -19,28 +19,24 @@ class ConvLSTMCell(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.Gates = nn.Conv2d(input_size + hidden_size, 4 * hidden_size, KERNEL_SIZE, padding=PADDING)
-        self.prev_state = None
 
-    def forward(self, input_):
+    def forward(self, input_, prev_state):
 
         # get batch and spatial sizes
         batch_size = input_.data.size()[0]
         spatial_size = input_.data.size()[2:]
 
         # generate empty prev_state, if None is provided
-        if self.prev_state is None:
+        if prev_state is None:
             state_size = [batch_size, self.hidden_size] + list(spatial_size)
             prev_state = (
                 Variable(torch.zeros(state_size)),
                 Variable(torch.zeros(state_size))
             )
-        else:
-            prev_state = self.prev_state
 
         prev_hidden, prev_cell = prev_state
 
         # data size is [batch, channel, height, width]
-        prev_hidden = prev_hidden.to('cpu')
         stacked_inputs = torch.cat((input_, prev_hidden), 1)
         gates = self.Gates(stacked_inputs)
 
@@ -56,10 +52,8 @@ class ConvLSTMCell(nn.Module):
         cell_gate = f.tanh(cell_gate)
 
         # compute current cell and hidden state
-        cell = (remember_gate.to('cpu') * prev_cell.to('cpu')) + (in_gate.to('cpu') * cell_gate.to('cpu'))
+        cell = (remember_gate * prev_cell) + (in_gate * cell_gate)
         hidden = out_gate * f.tanh(cell)
-
-        self.prev_state = (hidden, cell)
 
         return hidden, cell
 
@@ -80,7 +74,7 @@ def _main():
     torch.manual_seed(0)
 
     print('Instantiate model')
-    model = ConvLSTMCell(3, 512)
+    model = ConvLSTMCell(c, d)
     print(repr(model))
 
     print('Create input and target Variables')
@@ -90,26 +84,25 @@ def _main():
     print('Create a MSE criterion')
     loss_fn = nn.MSELoss()
 
-    state = None
-    loss = 0
-    for t in range(0, T):
-        print(x[t].size())
-        state = model(x[t])
-        break
-            #print(state[0].size())
-            #loss += loss_fn(state[0], y[t])
+    print('Run for', max_epoch, 'iterations')
+    for epoch in range(0, max_epoch):
+        state = None
+        loss = 0
+        for t in range(0, T):
+            state = model(x[t], state)
+            loss += loss_fn(state[0], y[t])
 
-        #print(' > Epoch {:2d} loss: {:.3f}'.format((epoch+1), loss.data[0]))
+        print(' > Epoch {:2d} loss: {:.3f}'.format((epoch+1), loss.data[0]))
 
         # zero grad parameters
-        #model.zero_grad()
+        model.zero_grad()
 
         # compute new grad parameters through time!
-        #loss.backward()
+        loss.backward()
 
         # learning_rate step against the gradient
-        #for p in model.parameters():
-        #    p.data.sub_(p.grad.data * lr)
+        for p in model.parameters():
+            p.data.sub_(p.grad.data * lr)
 
     print('Input size:', list(x.data.size()))
     print('Target size:', list(y.data.size()))
