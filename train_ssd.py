@@ -168,7 +168,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
             # running_classification_loss += classification_loss.item()
 
         optimizer.zero_grad()
-        tot_loss.backward(retain_graph=True)
+        tot_loss.backward()
         optimizer.step()
 
         # net.zero_grad()
