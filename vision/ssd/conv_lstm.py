@@ -191,23 +191,23 @@ def _main():
 		state = model(x[t])
 
 
-		print(model.hidden_state.detach_())
-		print(model.cell_state.detach_())
-	
-		# print(state[0].size())
-		#loss += loss_fn(state[0], y[t])
+	# print(model.hidden_state.detach_())
+	# print(model.cell_state.detach_())
 
-		#print(' > Epoch {:2d} loss: {:.3f}'.format((epoch+1), loss.data[0]))
+	# print(state[0].size())
+	#loss += loss_fn(state[0], y[t])
 
-		# zero grad parameters
-		# model.zero_grad()
+	#print(' > Epoch {:2d} loss: {:.3f}'.format((epoch+1), loss.data[0]))
 
-		# compute new grad parameters through time!
-		# loss.backward()
+	# zero grad parameters
+	# model.zero_grad()
 
-		# learning_rate step against the gradient
-		# for p in model.parameters():
-		#    p.data.sub_(p.grad.data * lr)
+	# compute new grad parameters through time!
+	# loss.backward()
+
+	# learning_rate step against the gradient
+	# for p in model.parameters():
+	#    p.data.sub_(p.grad.data * lr)
 
 	print('Input size:', list(x.data.size()))
 	print('Target size:', list(y.data.size()))
