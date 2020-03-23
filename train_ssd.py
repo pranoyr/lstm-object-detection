@@ -159,7 +159,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
             loss.backward()
             optimizer.step()
 
-            net.detach_all()
+            # net.detach_all()
             
             # calculating loss for all timesteps
             running_loss += loss.item()
