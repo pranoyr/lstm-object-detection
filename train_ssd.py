@@ -402,5 +402,5 @@ if __name__ == '__main__':
             # )
             model_path = os.path.join(
                 args.checkpoint_folder, f"{args.net}-Epoch-{epoch}.pth")
-            net.save(model_path)
+            # net.save(model_path)
             logging.info(f"Saved model {model_path}")
