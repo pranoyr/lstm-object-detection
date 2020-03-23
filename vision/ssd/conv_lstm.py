@@ -38,7 +38,7 @@ class ConvLSTMCell(nn.Module):
 		self.Gates = nn.Conv2d(hidden_size, 4 * hidden_size, KERNEL_SIZE, padding=PADDING)
 		self.hidden_state = None
 		self.cell_state = None
-		self.device = torch.device("cuda")
+		self.device = torch.device("cpu")
 
 	def forward(self, input_):
 
@@ -50,8 +50,8 @@ class ConvLSTMCell(nn.Module):
 		if self.hidden_state is None:
 			state_size = [batch_size, self.hidden_size] + list(spatial_size)
 			self.hidden_state, self.cell_state  = (
-				Variable(torch.zeros(state_size)),
-				Variable(torch.zeros(state_size))
+				torch.zeros(state_size),
+				torch.zeros(state_size)
 			)
 
 
