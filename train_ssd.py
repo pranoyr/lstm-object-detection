@@ -156,11 +156,10 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 
 
             optimizer.zero_grad()
-            loss.backward()
+            loss.backward(retain_graph=True)
             optimizer.step()
-
-            # net.detach_all()
             
+
             # calculating loss for all timesteps
             running_loss += loss.item()
             running_regression_loss += regression_loss.item()
@@ -381,8 +380,10 @@ if __name__ == '__main__':
 
     logging.info(f"Start training from epoch {last_epoch + 1}.")
     for epoch in range(last_epoch + 1, args.num_epochs):
+        
         train(train_loader, net, criterion, optimizer,
               device=DEVICE, debug_steps=args.debug_steps, epoch=epoch)
+
         scheduler.step()
 
         if epoch % args.validation_epochs == 0 or epoch == args.num_epochs - 1:
