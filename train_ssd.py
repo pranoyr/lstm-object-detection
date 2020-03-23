@@ -119,7 +119,6 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
     running_regression_loss = 0.0
     running_classification_loss = 0.0
     for i, data in enumerate(loader):
-    
         # batch , timesteps, channel, height, width
         #videos = torch.Tensor(2,2,3,300,300)
         videos, videos_boxes, videos_labels = data
@@ -136,12 +135,13 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
         # permute videos
         videos = videos.permute(1, 0, 2, 3, 4)
 
-    
-
         # permute boxes and labels to match videos size
         videos_boxes = videos_boxes.permute(1, 0, 2, 3)
         videos_labels = videos_labels.permute(1, 0, 2)
 
+        tot_loss = 0
+        reg_loss = 0
+        cls_loss = 0
         for j in range(videos.size(0)):
             video = videos[j, :, :, :, :]  # get image batch for each time step
             # out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
@@ -154,21 +154,27 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
             regression_loss, classification_loss = criterion(confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
             loss = regression_loss + classification_loss
 
+            # optimizer.zero_grad()
+            # loss.backward(retain_graph=True)
+            # optimizer.step()
 
-            optimizer.zero_grad()
-            loss.backward(retain_graph=True)
-            optimizer.step()
-            
+            tot_loss += loss
+            reg_loss += regression_loss
+            cls_loss += classification_loss
 
             # calculating loss for all timesteps
-            running_loss += loss.item()
-            running_regression_loss += regression_loss.item()
-            running_classification_loss += classification_loss.item()
+            # running_loss += loss.item()
+            # running_regression_loss += regression_loss.item()
+            # running_classification_loss += classification_loss.item()
+
+        optimizer.zero_grad()
+        tot_loss.backward(retain_graph=True)
+        optimizer.step()
 
         # net.zero_grad()
-        # running_loss += total_loss.item()
-        # running_regression_loss += total_regression_loss.item()
-        # running_classification_loss += total_classification_loss.item()
+        running_loss += tot_loss.item()
+        running_regression_loss += reg_loss.item()
+        running_classification_loss += cls_loss.item()
         if i and i % debug_steps == 0:
             avg_loss = running_loss / debug_steps
             avg_reg_loss = running_regression_loss / debug_steps
@@ -243,7 +249,6 @@ if __name__ == '__main__':
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-
     train_transform = TrainAugmentation(
         config.image_size, config.image_mean, config.image_std)
     target_transform = MatchPrior(config.priors, config.center_variance,
@@ -273,7 +278,8 @@ if __name__ == '__main__':
             num_classes = len(dataset.class_names)
 
         else:
-            raise ValueError(f"Dataset tpye {args.dataset_type} is not supported.")
+            raise ValueError(
+                f"Dataset tpye {args.dataset_type} is not supported.")
         datasets.append(dataset)
     logging.info(f"Stored labels into file {label_file}.")
     train_dataset = ConcatDataset(datasets)
@@ -340,7 +346,7 @@ if __name__ == '__main__':
             {'params': net.BottleneckLSTM_4.parameters()},
             {'params': net.BottleneckLSTM_5.parameters()},
             {'params': net.conv_13.parameters()}
-  
+
         ]
 
     timer.start("Load Model")
@@ -353,7 +359,8 @@ if __name__ == '__main__':
     elif args.pretrained_ssd:
         logging.info(f"Init from pretrained ssd {args.pretrained_ssd}")
         net.init_from_pretrained_ssd(args.pretrained_ssd)
-    logging.info(f'Took {timer.end("Load Model"):.2f} seconds to load the model.')
+    logging.info(
+        f'Took {timer.end("Load Model"):.2f} seconds to load the model.')
 
     net.to(DEVICE)
     print(net.parameters)
@@ -380,9 +387,10 @@ if __name__ == '__main__':
 
     logging.info(f"Start training from epoch {last_epoch + 1}.")
     for epoch in range(last_epoch + 1, args.num_epochs):
-        scheduler.step()
         train(train_loader, net, criterion, optimizer,
               device=DEVICE, debug_steps=args.debug_steps, epoch=epoch)
+
+        scheduler.step()
 
         if epoch % args.validation_epochs == 0 or epoch == args.num_epochs - 1:
             # val_loss, val_regression_loss, val_classification_loss = test(val_loader, net, criterion, DEVICE)
@@ -392,6 +400,7 @@ if __name__ == '__main__':
             #     f"Validation Regression Loss {val_regression_loss:.4f}, " +
             #     f"Validation Classification Loss: {val_classification_loss:.4f}"
             # )
-            model_path = os.path.join(args.checkpoint_folder, f"{args.net}-Epoch-{epoch}.pth")
+            model_path = os.path.join(
+                args.checkpoint_folder, f"{args.net}-Epoch-{epoch}.pth")
             net.save(model_path)
             logging.info(f"Saved model {model_path}")
