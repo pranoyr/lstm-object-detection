@@ -107,7 +107,7 @@ class VIDDataset:
 		return ids
 
 	def _get_annotation(self, image_id):
-		annotation_file = os.path.join(f"{image_id}.xml")
+		annotation_file = image_id
 		objects = ET.parse(annotation_file).findall("object")
 		boxes = []
 		labels = []
@@ -134,7 +134,7 @@ class VIDDataset:
 				np.array(labels, dtype=np.int64))
 
 	def _read_image(self, image_id):
-		image_file = f"{image_id}.JPEG"
+		image_file = image_id
 		image = cv2.imread(str(image_file))
 		image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 		return image
