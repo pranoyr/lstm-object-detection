@@ -68,6 +68,7 @@ class VIDDataset:
 			print(image.shape)
 			print(boxes)
 			print(labels)
+			print(img_path)
 			if self.transform:
 				image, boxes, labels = self.transform(image, boxes, labels)
 			if self.target_transform:
