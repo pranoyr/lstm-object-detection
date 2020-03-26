@@ -55,7 +55,7 @@ class VIDDataset:
 		video = []
 		video_boxes = []
 		video_labels = []
-		video_path = os.path.join(self.root , 'Annotations/VID/train', self.video_ids[index])
+		video_path = os.path.join(self.root , 'Annotations/VID/train', self.video_ids[index].split()[0])
 
 		# loop over frames in a video sample
 		for img_name in os.listdir(video_path):
