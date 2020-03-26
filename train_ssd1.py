@@ -18,6 +18,7 @@ from vision.ssd.ssd import MatchPrior
 # from vision.ssd.resnet50_ssd1 import create_resnet18_ssd
 from vision.ssd.ssd import SSD
 from vision.datasets.voc_dataset_video import VOCDataset
+from vision.datasets.vid_dataset import VIDDataset
 from vision.datasets.open_images import OpenImagesDataset
 from vision.nn.multibox_loss import MultiboxLoss
 # from vision.ssd.config import vgg_ssd_config
@@ -28,7 +29,7 @@ from vision.ssd.data_preprocessing import TrainAugmentation, TestTransform
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Training With Pytorch')
 
-parser.add_argument("--dataset_type", default="voc", type=str,
+parser.add_argument("--dataset_type", default="VID", type=str,
                     help='Specify dataset type. Currently support voc and open_images.')
 
 parser.add_argument('--datasets', nargs='+', help='Dataset directory path')
@@ -261,7 +262,7 @@ if __name__ == '__main__':
     datasets = []
     for dataset_path in args.datasets:
         if args.dataset_type == 'voc':
-            dataset = VOCDataset(dataset_path, transform=train_transform,
+            dataset = VIDDataset(dataset_path, transform=train_transform,
                                  target_transform=target_transform)
             label_file = os.path.join(
                 args.checkpoint_folder, "voc-model-labels.txt")
@@ -298,9 +299,9 @@ if __name__ == '__main__':
         logging.info(val_dataset)
     logging.info("validation dataset size: {}".format(len(val_dataset)))
 
-    val_loader = DataLoader(val_dataset, args.batch_size,
-                            num_workers=args.num_workers,
-                            shuffle=False)
+    # val_loader = DataLoader(val_dataset, args.batch_size,
+    #                         num_workers=args.num_workers,
+    #                         shuffle=False)
     logging.info("Build network.")
     net = create_net(num_classes)
     min_loss = -10000.0
