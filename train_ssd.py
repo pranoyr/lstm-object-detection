@@ -18,6 +18,7 @@ from vision.ssd.ssd import MatchPrior
 # from vision.ssd.resnet50_ssd1 import create_resnet18_ssd
 from vision.ssd.ssd import SSD
 from vision.datasets.voc_dataset_video import VOCDataset
+from vision.datasets.vid_dataset import VIDDataset
 from vision.datasets.open_images import OpenImagesDataset
 from vision.nn.multibox_loss import MultiboxLoss
 # from vision.ssd.config import vgg_ssd_config
@@ -28,7 +29,7 @@ from vision.ssd.data_preprocessing import TrainAugmentation, TestTransform
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Training With Pytorch')
 
-parser.add_argument("--dataset_type", default="voc", type=str,
+parser.add_argument("--dataset_type", default="vid", type=str,
                     help='Specify dataset type. Currently support voc and open_images.')
 
 parser.add_argument('--datasets', nargs='+', help='Dataset directory path')
@@ -119,7 +120,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
     running_regression_loss = 0.0
     running_classification_loss = 0.0
     for i, data in enumerate(loader):
-    
+
         # batch , timesteps, channel, height, width
         #videos = torch.Tensor(2,2,3,300,300)
         videos, videos_boxes, videos_labels = data
@@ -136,8 +137,6 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
         # permute videos
         videos = videos.permute(1, 0, 2, 3, 4)
 
-    
-
         # permute boxes and labels to match videos size
         videos_boxes = videos_boxes.permute(1, 0, 2, 3)
         videos_labels = videos_labels.permute(1, 0, 2)
@@ -151,9 +150,9 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
             confidence, locations = net(video)
 
             #confidence, locations = net(images)
-            regression_loss, classification_loss = criterion(confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
+            regression_loss, classification_loss = criterion(
+                confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
             loss = regression_loss + classification_loss
-
 
             optimizer.zero_grad()
             loss.backward(retain_graph=True)
@@ -242,7 +241,6 @@ if __name__ == '__main__':
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-
     train_transform = TrainAugmentation(
         config.image_size, config.image_mean, config.image_std)
     target_transform = MatchPrior(config.priors, config.center_variance,
@@ -254,12 +252,12 @@ if __name__ == '__main__':
     logging.info("Prepare training datasets.")
     datasets = []
     for dataset_path in args.datasets:
-        if args.dataset_type == 'voc':
-            dataset = VOCDataset(dataset_path, transform=train_transform,
+        if args.dataset_type == 'vid':
+            dataset = VIDDataset(dataset_path, transform=train_transform,
                                  target_transform=target_transform)
-            label_file = os.path.join(
-                args.checkpoint_folder, "voc-model-labels.txt")
-            store_labels(label_file, dataset.class_names)
+            # label_file = os.path.join(
+            #     args.checkpoint_folder, "voc-model-labels.txt")
+            # store_labels(label_file, dataset.class_names)
             num_classes = len(dataset.class_names)
         elif args.dataset_type == 'open_images':
             dataset = OpenImagesDataset(dataset_path,
@@ -272,9 +270,10 @@ if __name__ == '__main__':
             num_classes = len(dataset.class_names)
 
         else:
-            raise ValueError(f"Dataset tpye {args.dataset_type} is not supported.")
+            raise ValueError(
+                f"Dataset tpye {args.dataset_type} is not supported.")
         datasets.append(dataset)
-    logging.info(f"Stored labels into file {label_file}.")
+    # logging.info(f"Stored labels into file {label_file}.")
     train_dataset = ConcatDataset(datasets)
     logging.info("Train dataset size: {}".format(len(train_dataset)))
     train_loader = DataLoader(train_dataset, args.batch_size,
@@ -289,11 +288,11 @@ if __name__ == '__main__':
                                         transform=test_transform, target_transform=target_transform,
                                         dataset_type="test")
         logging.info(val_dataset)
-    logging.info("validation dataset size: {}".format(len(val_dataset)))
+    #logging.info("validation dataset size: {}".format(len(val_dataset)))
 
-    val_loader = DataLoader(val_dataset, args.batch_size,
-                            num_workers=args.num_workers,
-                            shuffle=False)
+    # val_loader = DataLoader(val_dataset, args.batch_size,
+    #                         num_workers=args.num_workers,
+    #                         shuffle=False)
     logging.info("Build network.")
     net = create_net(num_classes)
     min_loss = -10000.0
@@ -339,7 +338,7 @@ if __name__ == '__main__':
             {'params': net.BottleneckLSTM_4.parameters()},
             {'params': net.BottleneckLSTM_5.parameters()},
             {'params': net.conv_13.parameters()}
-  
+
         ]
 
     timer.start("Load Model")
@@ -352,7 +351,8 @@ if __name__ == '__main__':
     elif args.pretrained_ssd:
         logging.info(f"Init from pretrained ssd {args.pretrained_ssd}")
         net.init_from_pretrained_ssd(args.pretrained_ssd)
-    logging.info(f'Took {timer.end("Load Model"):.2f} seconds to load the model.')
+    logging.info(
+        f'Took {timer.end("Load Model"):.2f} seconds to load the model.')
 
     net.to(DEVICE)
     print(net.parameters)
@@ -379,13 +379,12 @@ if __name__ == '__main__':
 
     logging.info(f"Start training from epoch {last_epoch + 1}.")
     for epoch in range(last_epoch + 1, args.num_epochs):
-        
         train(train_loader, net, criterion, optimizer,
               device=DEVICE, debug_steps=args.debug_steps, epoch=epoch)
 
         scheduler.step()
 
-        if epoch % args.validation_epochs == 0 or epoch == args.num_epochs - 1:
+        if epoch % 10 == 0:
             # val_loss, val_regression_loss, val_classification_loss = test(val_loader, net, criterion, DEVICE)
             # logging.info(
             #     f"Epoch: {epoch}, " +
@@ -393,6 +392,7 @@ if __name__ == '__main__':
             #     f"Validation Regression Loss {val_regression_loss:.4f}, " +
             #     f"Validation Classification Loss: {val_classification_loss:.4f}"
             # )
-            model_path = os.path.join(args.checkpoint_folder, f"{args.net}-Epoch-{epoch}.pth")
+            model_path = os.path.join(
+                args.checkpoint_folder, f"{args.net}-Epoch-{epoch}.pth")
             net.save(model_path)
             logging.info(f"Saved model {model_path}")
