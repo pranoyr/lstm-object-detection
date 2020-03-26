@@ -58,7 +58,7 @@ class VIDDataset:
 
 		# loop over frames in a video sample
 		for img_name in os.listdir(video_path):
-			img_path = os.listdir(os.path.join(video_path, img_name))
+			img_path = os.path.join(video_path, img_name)
 			boxes, labels = self._get_annotation(img_path)
 			# if not self.keep_difficult:
 			# 	boxes = boxes[is_difficult == 0]
