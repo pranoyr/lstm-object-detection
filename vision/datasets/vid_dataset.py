@@ -65,18 +65,15 @@ class VIDDataset:
 			# 	boxes = boxes[is_difficult == 0]
 			# 	labels = labels[is_difficult == 0]
 			image = self._read_image(img_path.replace('Annotations', 'Data'))
-			print(image.shape)
-			print(boxes)
-			print(labels)
-			print(img_path)
-			if self.transform:
-				image, boxes, labels = self.transform(image, boxes, labels)
-			if self.target_transform:
-				boxes, labels = self.target_transform(boxes, labels)
+			if boxes:
+				if self.transform:
+					image, boxes, labels = self.transform(image, boxes, labels)
+				if self.target_transform:
+					boxes, labels = self.target_transform(boxes, labels)
 
-			video.append(image)
-			video_boxes.append(boxes)
-			video_labels.append(labels)
+				video.append(image)
+				video_boxes.append(boxes)
+				video_labels.append(labels)
 
 		video = torch.stack(video)[:5]
 		video_boxes = torch.stack(video_boxes)[:5]
