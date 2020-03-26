@@ -134,7 +134,7 @@ class VIDDataset:
 				np.array(labels, dtype=np.int64))
 
 	def _read_image(self, image_id):
-		image_file = image_id
+		image_file = image_id.replace("xml", "JPEG")
 		image = cv2.imread(str(image_file))
 		image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 		return image
