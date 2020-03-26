@@ -84,19 +84,19 @@ class VIDDataset:
 
 		return video, video_boxes, video_labels
 
-	def get_image(self, index):
-		image_id = self.ids[index]
-		image = self._read_image(image_id)
-		if self.transform:
-			image, _ = self.transform(image)
-		return image
+	# def get_image(self, index):
+	# 	image_id = self.ids[index]
+	# 	image = self._read_image(image_id)
+	# 	if self.transform:
+	# 		image, _ = self.transform(image)
+	# 	return image
 
-	def get_annotation(self, index):
-		image_id = self.ids[index]
-		return image_id, self._get_annotation(image_id)
+	# def get_annotation(self, index):
+	# 	image_id = self.ids[index]
+	# 	return image_id, self._get_annotation(image_id)
 
 	def __len__(self):
-		return self.len_samples
+		return len(self.video_ids)
 
 	@staticmethod
 	def _read_image_ids(image_sets_file):
