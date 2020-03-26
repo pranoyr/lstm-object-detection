@@ -137,7 +137,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
         # permute videos
         videos = videos.permute(1, 0, 2, 3, 4)
 
-        print(videos.shape)
+       
 
         # permute boxes and labels to match videos size
         videos_boxes = videos_boxes.permute(1, 0, 2, 3)
@@ -152,6 +152,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 
             #images = [out_dec_23_batch , out_dec_final_batch]
 
+            print(video.shape)
             confidence, locations = net(video)
 
             #confidence, locations = net(images)
@@ -194,7 +195,6 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
             running_classification_loss = 0.0
 
         net.detach_all()
-    print("!!!!!!")
     # net.detach_all()
 
 
@@ -394,7 +394,7 @@ if __name__ == '__main__':
     for epoch in range(last_epoch + 1, args.num_epochs):
         train(train_loader, net, criterion, optimizer,
               device=DEVICE, debug_steps=args.debug_steps, epoch=epoch)
-        print("#$%#$%#$")
+     
 
         # scheduler.step()
 
