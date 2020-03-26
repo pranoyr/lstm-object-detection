@@ -32,7 +32,8 @@ class VIDDataset:
 			image_sets_file = os.path.join(
 				self.root, "ImageSets/VID/train_5.txt")
 
-		self.video_ids = get_video_ids(image_sets_file)
+		#self.video_ids = get_video_ids(image_sets_file)
+		self.video_ids = VOCDataset._read_image_ids(image_sets_file)
 		self.keep_difficult = keep_difficult
 
 		logging.info("No labels file, using default VOC classes.")
