@@ -152,7 +152,6 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 
             #images = [out_dec_23_batch , out_dec_final_batch]
 
-            print(video.shape)
             confidence, locations = net(video)
 
             #confidence, locations = net(images)
