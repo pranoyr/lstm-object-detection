@@ -3,9 +3,9 @@ import torch
 
 layer = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3)
 
-i = torch.Tensor(10, 3, 28, 28)
+i = torch.Tensor(32,32,3)
 
-j = torch.Tensor(10, 3, 28, 28)
+j = torch.Tensor(32,32,3)
 
 
-print(torch.stack([i,j]).shape)
+print(torch.cat([i,j]).shape)
