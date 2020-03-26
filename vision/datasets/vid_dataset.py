@@ -65,6 +65,9 @@ class VIDDataset:
 			# 	boxes = boxes[is_difficult == 0]
 			# 	labels = labels[is_difficult == 0]
 			image = self._read_image(img_path.replace('Annotations', 'Data'))
+			print(image.shape)
+			print(boxes.shape)
+			print(labels.shape)
 			if self.transform:
 				image, boxes, labels = self.transform(image, boxes, labels)
 			if self.target_transform:
