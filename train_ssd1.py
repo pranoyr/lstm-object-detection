@@ -128,6 +128,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
         videos_boxes = videos_boxes.to(device)
         videos_labels = videos_labels.to(device)
 
+
         # timesteps, batch,  channel, height, width
         # torch.Size([2, 24, 512, 38, 38])
         # out_enc_23, out_enc_final = encoder(videos)
@@ -135,6 +136,8 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 
         # permute videos
         videos = videos.permute(1, 0, 2, 3, 4)
+
+        print(videos.shape)
 
         # permute boxes and labels to match videos size
         videos_boxes = videos_boxes.permute(1, 0, 2, 3)
