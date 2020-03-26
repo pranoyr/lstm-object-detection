@@ -87,7 +87,7 @@ parser.add_argument('--batch_size', default=32, type=int,
                     help='Batch size for training')
 parser.add_argument('--num_epochs', default=120, type=int,
                     help='the number epochs')
-parser.add_argument('--num_workers', default=0, type=int,
+parser.add_argument('--num_workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--validation_epochs', default=5, type=int,
                     help='the number epochs')
@@ -397,7 +397,7 @@ if __name__ == '__main__':
 
         scheduler.step()
 
-        if epoch % 50 == 0:
+        if epoch % 10 == 0:
             # val_loss, val_regression_loss, val_classification_loss = test(val_loader, net, criterion, DEVICE)
             # logging.info(
             #     f"Epoch: {epoch}, " +
