@@ -194,6 +194,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
             running_classification_loss = 0.0
 
         net.detach_all()
+    print("!!!!!!")
     # net.detach_all()
 
 
@@ -393,6 +394,7 @@ if __name__ == '__main__':
     for epoch in range(last_epoch + 1, args.num_epochs):
         train(train_loader, net, criterion, optimizer,
               device=DEVICE, debug_steps=args.debug_steps, epoch=epoch)
+        print("#$%#$%#$")
 
         # scheduler.step()
 
