@@ -74,7 +74,7 @@ class VIDDataset:
 			video_boxes.append(boxes)
 			video_labels.append(labels)
 
-		video = torch.stack(video)[:10]
+		video = torch.stack(video)[:5]
 		video_boxes = torch.stack(video_boxes)[:5]
 		video_labels = torch.stack(video_labels)[:5]
 
