@@ -359,7 +359,7 @@ if __name__ == '__main__':
 
     criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=3,
                              center_variance=0.1, size_variance=0.2, device=DEVICE)
-    optimizer = torch.optim.RMSprop(params, lr=0.003)
+    optimizer = torch.optim.RMSprop(params, lr=0.003,weight_decay=args.weight_decay, momentum=args.momentum)
     logging.info(f"Learning rate: {args.lr}, Base net learning rate: {base_net_lr}, "
                  + f"Extra Layers learning rate: {extra_layers_lr}.")
 
