@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from ..utils import box_utils
 from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
 from .conv_lstm import ConvLSTMCell
+from .conv_lstm import BottleNeckLSTM
 # import mobilenetv1_ssd_config as config
 
 # borrowed from "https://github.com/marvis/pytorch-mobilenet"
@@ -84,9 +85,9 @@ class SSD(nn.Module):
 		self.is_test = is_test
 		self.config = config
 
-		self.BottleneckLSTM_1 = ConvLSTMCell(1024, 256)
-		self.BottleneckLSTM_2 = ConvLSTMCell(256, 64)
-		self.BottleneckLSTM_3 = ConvLSTMCell(64, 16)
+		self.BottleneckLSTM_1 = BottleNeckLSTM(1024, 256)
+		self.BottleneckLSTM_2 = BottleNeckLSTM(256, 64)
+		self.BottleneckLSTM_3 = BottleNeckLSTM(64, 16)
 		self.BottleneckLSTM_4 = ConvLSTMCell(16, 16)
 		self.BottleneckLSTM_5 = ConvLSTMCell(16, 16)
 

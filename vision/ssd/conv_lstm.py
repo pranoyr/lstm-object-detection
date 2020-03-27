@@ -23,7 +23,7 @@ def conv_dw(inp, oup, kernel_size, padding, stride=1):
 
 
 
-class ConvLSTMCell(nn.Module):
+class BottleNeckLSTM(nn.Module):
 	"""
 	Generate a convolutional LSTM cell
 	"""
@@ -33,9 +33,9 @@ class ConvLSTMCell(nn.Module):
 		self.input_size = input_size
 		self.hidden_size = hidden_size
 		self.bottleneck_gate = nn.Sequential(
-			nn.Conv2d(input_size + hidden_size, hidden_size, KERNEL_SIZE, padding=PADDING),
+			conv_dw(input_size + hidden_size, hidden_size, KERNEL_SIZE, padding=PADDING),
 			nn.ReLU())
-		self.Gates = nn.Conv2d(hidden_size, 4 * hidden_size, KERNEL_SIZE, padding=PADDING)
+		self.Gates = conv_dw(hidden_size, 4 * hidden_size, KERNEL_SIZE, padding=PADDING)
 		self.hidden_state = None
 		self.cell_state = None
 		self.device = torch.device("cuda")
@@ -87,71 +87,64 @@ class ConvLSTMCell(nn.Module):
 
 
 
-# class ConvLSTMCell(nn.Module):
-# 	"""
-# 	Generate a convolutional LSTM cell
-# 	"""
+class ConvLSTMCell(nn.Module):
+	"""
+	Generate a convolutional LSTM cell
+	"""
 
-# 	def __init__(self, input_size, hidden_size):
-# 		super().__init__()
-# 		self.input_size = input_size
-# 		self.hidden_size = hidden_size
-# 		self.prev_state = None
-# 		#self.bottleneck_gate = nn.Conv2d(input_size + hidden_size, hidden_size, kernel_size = KERNEL_SIZE, stride = 1)
-# 		self.Gates = nn.Conv2d(input_size + hidden_size, 4 * hidden_size, kernel_size = KERNEL_SIZE, stride =1)
+	def __init__(self, input_size, hidden_size):
+		super().__init__()
+		self.input_size = input_size
+		self.hidden_size = hidden_size
+		self.Gates = nn.Conv2d(input_size + hidden_size, 4 * hidden_size, KERNEL_SIZE, padding=PADDING)
+		self.hidden_state = None
+		self.cell_state = None
+		self.device = torch.device("cuda")
 
-# 	def forward(self, input_):
+	def forward(self, input_):
 
-# 		# get batch and spatial sizes
-# 		batch_size = input_.data.size()[0]
-# 		spatial_size = input_.data.size()[2:]
+		# get batch and spatial sizes
+		batch_size = input_.data.size()[0]
+		spatial_size = input_.data.size()[2:]
 
-# 		# generate empty prev_state, if None is provided
-# 		if self.prev_state is None:
-# 			state_size = [batch_size, self.hidden_size] + list(spatial_size)
-# 			prev_state = (
-# 				Variable(torch.zeros(state_size)),
-# 				Variable(torch.zeros(state_size))
-# 			)
-# 		else:
-# 			prev_state = self.prev_state
+		# generate empty prev_state, if None is provided
+		if self.hidden_state is None:
+			state_size = [batch_size, self.hidden_size] + list(spatial_size)
+			self.hidden_state, self.cell_state  = (
+				torch.zeros(state_size),
+				torch.zeros(state_size)
+			)
 
 
-# 		prev_hidden, prev_cell = prev_state
+		# data size is [batch, channel, height, width]
+		self.hidden_state = self.hidden_state.to(self.device)
+		stacked_inputs = torch.cat((input_, self.hidden_state), 1)
 
-	
-# 		# data size is [batch, channel, height, width]
-# 		prev_hidden = prev_hidden.to('cpu')
-# 		stacked_inputs = torch.cat((input_, prev_hidden), 1)
+		gates = self.Gates(stacked_inputs)
 
-# 		#b_gate = self.bottleneck_gate(stacked_inputs)
+		# chunk across channel dimension
+		in_gate, remember_gate, out_gate, cell_gate = gates.chunk(4, 1)
 
-# 		gates = self.Gates(stacked_inputs)
+		# apply sigmoid non linearity
+		in_gate = f.sigmoid(in_gate)
+		remember_gate = f.sigmoid(remember_gate)
+		out_gate = f.sigmoid(out_gate)
 
-# 		print(gates.shape)
-		
-# 		# chunk across channel dimension
-# 		in_gate, remember_gate, out_gate, cell_gate = gates.chunk(4, 1)
-# 		print(in_gate.shape)
-# 		print(remember_gate.shape)
-# 		print(out_gate.shape)
-# 		print(cell_gate.shape)
+		# apply tanh non linearity
+		cell_gate = f.tanh(cell_gate)
 
-# 		# apply sigmoid non linearity
-# 		in_gate = f.sigmoid(in_gate)
-# 		remember_gate = f.sigmoid(remember_gate)
-# 		out_gate = f.sigmoid(out_gate)
+		# compute current cell and hidden state
+		cell = (remember_gate.to(self.device) * self.cell_state.to(self.device)) + (in_gate.to(self.device) * cell_gate.to(self.device))
+		hidden = out_gate * f.tanh(cell)
 
-# 		# apply tanh non linearity
-# 		cell_gate = f.tanh(cell_gate)
+		# self.prev_state = (hidden, cell)
 
-# 		# compute current cell and hidden state
-# 		cell = (remember_gate.to('cpu') * prev_cell.to('cpu')) + (in_gate.to('cpu') * cell_gate.to('cpu'))
-# 		hidden = out_gate * f.tanh(cell)
+		self.hidden_state = hidden
+		self.cell_state =  cell
 
-# 		self.prev_state = (hidden, cell)
+		return hidden, cell
 
-# 		return hidden, cell
+
 
 
 def _main():
