@@ -49,7 +49,7 @@ parser.add_argument('--mb2_width_mult', default=1.0, type=float,
                     help='Width Multiplifier for MobilenetV2')
 
 # Params for SGD
-parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float,
+parser.add_argument('--lr', '--learning-rate', default=0.003, type=float,
                     help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float,
                     help='Momentum value for optim')
@@ -128,7 +128,6 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
         videos_boxes = videos_boxes.to(device)
         videos_labels = videos_labels.to(device)
 
-
         # timesteps, batch,  channel, height, width
         # torch.Size([2, 24, 512, 38, 38])
         # out_enc_23, out_enc_final = encoder(videos)
@@ -136,8 +135,6 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 
         # permute videos
         videos = videos.permute(1, 0, 2, 3, 4)
-
-       
 
         # permute boxes and labels to match videos size
         videos_boxes = videos_boxes.permute(1, 0, 2, 3)
@@ -155,7 +152,8 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
             confidence, locations = net(video)
 
             #confidence, locations = net(images)
-            regression_loss, classification_loss = criterion(confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
+            regression_loss, classification_loss = criterion(
+                confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
             loss = regression_loss + classification_loss
 
             # optimizer.zero_grad()
@@ -371,7 +369,8 @@ if __name__ == '__main__':
 
     criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=10,
                              center_variance=0.1, size_variance=0.2, device=DEVICE)
-    optimizer = torch.optim.RMSprop(params, lr=0.003)
+    optimizer = torch.optim.RMSprop(
+        params, lr=args.lr, weight_decay=args.weight_decay, momentum=args.momentum)
     logging.info(f"Learning rate: {args.lr}, Base net learning rate: {base_net_lr}, "
                  + f"Extra Layers learning rate: {extra_layers_lr}.")
 
@@ -393,7 +392,6 @@ if __name__ == '__main__':
     for epoch in range(last_epoch + 1, args.num_epochs):
         train(train_loader, net, criterion, optimizer,
               device=DEVICE, debug_steps=args.debug_steps, epoch=epoch)
-     
 
         scheduler.step()
 
