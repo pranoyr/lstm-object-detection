@@ -365,7 +365,7 @@ if __name__ == '__main__':
         f'Took {timer.end("Load Model"):.2f} seconds to load the model.')
 
     net.to(DEVICE)
-    print(net.parameters)
+    # print(net.parameters)
 
     criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=10,
                              center_variance=0.1, size_variance=0.2, device=DEVICE)
