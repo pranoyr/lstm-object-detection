@@ -77,7 +77,7 @@ for img_name in os.listdir(dir_path):
 video = np.array(imgs)
 
 for image in video:
-    boxes, labels, probs = predictor.predict(image, 10, 0.7)
+    boxes, labels, probs = predictor.predict(image, 10, 0.3)
 
 print(boxes.shape)
 
