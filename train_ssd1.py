@@ -144,7 +144,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
         reg_loss = 0
         cls_loss = 0
         for j in range(videos.size(0)):
-            video = videos[j, :, :, :, :]  # get image batch for each time step
+            video = videos[j]  # get image batch for each time step
             # out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
 
             #images = [out_dec_23_batch , out_dec_final_batch]
