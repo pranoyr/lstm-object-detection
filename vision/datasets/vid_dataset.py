@@ -51,6 +51,8 @@ class VIDDataset:
 		self.class_dict = {class_name: i for i,
 						   class_name in enumerate(self.class_names)}
 
+		print("!@@@##!#@#!#!@#!@")
+
 	def __getitem__(self, index):
 		video = []
 		video_boxes = []
