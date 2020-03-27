@@ -87,7 +87,7 @@ class SSD(nn.Module):
 		self.BottleneckLSTM_1 = ConvLSTMCell(1024, 256)
 		self.BottleneckLSTM_2 = ConvLSTMCell(256, 64)
 		self.BottleneckLSTM_3 = ConvLSTMCell(64, 16)
-		self.BottleneckLSTM_4 = ConvLSTMCell(16, 6)
+		self.BottleneckLSTM_4 = ConvLSTMCell(16, 16)
 		self.BottleneckLSTM_5 = ConvLSTMCell(16, 16)
 
 		self.extras = ModuleList([
