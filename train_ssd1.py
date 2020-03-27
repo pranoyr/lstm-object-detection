@@ -369,7 +369,7 @@ if __name__ == '__main__':
     net.to(DEVICE)
     print(net.parameters)
 
-    criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=3,
+    criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=10,
                              center_variance=0.1, size_variance=0.2, device=DEVICE)
     optimizer = torch.optim.RMSprop(params, lr=0.003)
     logging.info(f"Learning rate: {args.lr}, Base net learning rate: {base_net_lr}, "
