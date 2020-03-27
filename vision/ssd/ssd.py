@@ -87,8 +87,8 @@ class SSD(nn.Module):
 		self.BottleneckLSTM_1 = ConvLSTMCell(1024, 256)
 		self.BottleneckLSTM_2 = ConvLSTMCell(256, 64)
 		self.BottleneckLSTM_3 = ConvLSTMCell(64, 16)
-		self.BottleneckLSTM_4 = ConvLSTMCell(16, 4)
-		self.BottleneckLSTM_5 = ConvLSTMCell(4, 1)
+		self.BottleneckLSTM_4 = ConvLSTMCell(16, 6)
+		self.BottleneckLSTM_5 = ConvLSTMCell(16, 16)
 
 		self.extras = ModuleList([
 			Sequential(
@@ -110,9 +110,9 @@ class SSD(nn.Module):
 				ReLU()
 			),
 			Sequential(
-				Conv2d(in_channels=4, out_channels=2, kernel_size=1),
+				Conv2d(in_channels=16, out_channels=8, kernel_size=1),
 				ReLU(),
-				conv_dw_1(inp=2, oup=4, kernel_size=3, stride=2, padding=1),
+				conv_dw_1(inp=8, oup=16, kernel_size=3, stride=2, padding=1),
 				ReLU()
 			)
 		])
@@ -124,8 +124,8 @@ class SSD(nn.Module):
 			conv_dw_1(inp=256, oup=6 * 4, kernel_size=3, padding=1),
 			conv_dw_1(inp=64, oup=6 * 4, kernel_size=3, padding=1),
 			conv_dw_1(inp=16, oup=6 * 4, kernel_size=3, padding=1),
-			conv_dw_1(inp=4, oup=6 * 4, kernel_size=3, padding=1),
-			conv_dw_1(inp=1, oup=6 * 4, kernel_size=3, padding=1),
+			conv_dw_1(inp=16, oup=6 * 4, kernel_size=3, padding=1),
+			conv_dw_1(inp=16, oup=6 * 4, kernel_size=3, padding=1),
 		])
 
 		self.classification_headers = ModuleList([
@@ -133,8 +133,8 @@ class SSD(nn.Module):
 			conv_dw_1(inp=256, oup=6 * num_classes, kernel_size=3, padding=1),
 			conv_dw_1(inp=64, oup=6 * num_classes, kernel_size=3, padding=1),
 			conv_dw_1(inp=16, oup=6 * num_classes, kernel_size=3, padding=1),
-			conv_dw_1(inp=4, oup=6 * num_classes, kernel_size=3, padding=1),
-			conv_dw_1(inp=1, oup=6 * num_classes, kernel_size=3, padding=1),
+			conv_dw_1(inp=16, oup=6 * num_classes, kernel_size=3, padding=1),
+			conv_dw_1(inp=16, oup=6 * num_classes, kernel_size=3, padding=1),
 		])
 
 		self.conv_13 = conv_dw(512, 1024, 2)
@@ -205,11 +205,11 @@ class SSD(nn.Module):
 
 		if self.is_test:
 			confidences = F.softmax(confidences, dim=2)
-			# boxes = box_utils.convert_locations_to_boxes(
-			#     locations, self.priors, self.config.center_variance, self.config.size_variance
-			# )
-			# boxes = box_utils.center_form_to_corner_form(boxes)
-			# return all_hidden_states, confidences, boxes
+			boxes = box_utils.convert_locations_to_boxes(
+			    locations, self.priors, self.config.center_variance, self.config.size_variance
+			)
+			boxes = box_utils.center_form_to_corner_form(boxes)
+			return confidences, boxes
 		else:
 			# print(locations.size())
 			# print(confidence.size())

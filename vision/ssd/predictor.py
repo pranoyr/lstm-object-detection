@@ -16,17 +16,15 @@ class Predictor:
         self.nms_method = nms_method
 
         self.sigma = sigma
-        if device:
-            self.device = device
-        else:
-            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+       
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         self.net.to(self.device)
         self.net.eval()
 
         self.timer = Timer()
 
-    def predict(self, image, hidden_states_list, top_k=-1, prob_threshold=None):
+    def predict(self, image, top_k=-1, prob_threshold=None):
         cpu_device = torch.device("cpu")
         height, width, _ = image.shape
         image = self.transform(image)
@@ -34,7 +32,7 @@ class Predictor:
         images = images.to(self.device)
         with torch.no_grad():
             self.timer.start()
-            hidden_states_list, scores, boxes = self.net.forward(images,hidden_states_list)
+            scores, boxes = self.net(images)
             print("Inference time: ", self.timer.end())
         boxes = boxes[0]
         scores = scores[0]
@@ -68,4 +66,4 @@ class Predictor:
         picked_box_probs[:, 1] *= height
         picked_box_probs[:, 2] *= width
         picked_box_probs[:, 3] *= height
-        return hidden_states_list, picked_box_probs[:, :4], torch.tensor(picked_labels), picked_box_probs[:, 4]
+        return picked_box_probs[:, :4], torch.tensor(picked_labels), picked_box_probs[:, 4]
