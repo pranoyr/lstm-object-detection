@@ -40,6 +40,10 @@ class BottleNeckLSTM(nn.Module):
 		self.cell_state = None
 		self.device = torch.device("cuda")
 
+	def initialise_hidden_cell_state(self):
+		self.cell_state = None
+		self.hidden_state = None
+
 	def forward(self, input_):
 
 		# get batch and spatial sizes

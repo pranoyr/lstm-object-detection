@@ -237,18 +237,23 @@ class SSD(nn.Module):
 	def detach_all(self):
 		self.BottleneckLSTM_1.hidden_state.detach_()
 		self.BottleneckLSTM_1.cell_state.detach_()
+		self.BottleneckLSTM_1.initialise_hidden_cell_state()
 
 		self.BottleneckLSTM_2.hidden_state.detach_()
 		self.BottleneckLSTM_2.cell_state.detach_()
+		self.BottleneckLSTM_2.initialise_hidden_cell_state()
 
 		self.BottleneckLSTM_3.hidden_state.detach_()
 		self.BottleneckLSTM_3.cell_state.detach_()
+		self.BottleneckLSTM_3.initialise_hidden_cell_state()
 
 		self.BottleneckLSTM_4.hidden_state.detach_()
 		self.BottleneckLSTM_4.cell_state.detach_()
+		self.BottleneckLSTM_4.initialise_hidden_cell_state()
 
 		self.BottleneckLSTM_5.hidden_state.detach_()
 		self.BottleneckLSTM_5.cell_state.detach_()
+		self.BottleneckLSTM_5.initialise_hidden_cell_state()
 
 	def init_from_pretrained_ssd(self, model):
 		state_dict = torch.load(
