@@ -342,7 +342,7 @@ if __name__ == '__main__':
 				net.regression_headers.parameters(),
 				net.classification_headers.parameters()
 			)},
-			{'params': itertools.chain(net.lstm_layers)},
+			{'params': itertools.chain(net.lstm_layers.parameters())},
 			{'params': net.conv_13.parameters()}
 
 		]
