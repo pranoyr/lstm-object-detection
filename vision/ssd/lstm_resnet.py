@@ -5,7 +5,7 @@ from typing import List, Tuple
 import torch.nn.functional as F
 
 
-from ..utils import box_utils
+# from ..utils import box_utils
 # from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
 # from .conv_lstm import ConvLSTMCell
 # from .conv_lstm import BottleNeckLSTM

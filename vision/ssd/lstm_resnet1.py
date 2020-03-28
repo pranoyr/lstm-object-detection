@@ -3,15 +3,19 @@ import torch
 import numpy as np
 from typing import List, Tuple
 import torch.nn.functional as F
+
 from ..utils import box_utils
-# import box_utils
 from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
 from .conv_lstm import ConvLSTMCell
 from .conv_lstm import BottleNeckLSTM
-# import mobilenetv1_ssd_config as config
 from torchvision.models import resnet101
 
-# borrowed from "https://github.com/marvis/pytorch-mobilenet"
+# import box_utils
+# from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
+# from conv_lstm import ConvLSTMCell
+# from conv_lstm import BottleNeckLSTM
+# import mobilenetv1_ssd_config as config
+# from torchvision.models import resnet101
 
 
 def conv_dw(inp, oup, stride):
@@ -37,7 +41,7 @@ def conv_dw_1(inp, oup, kernel_size=3, padding=0, stride=1):
 	)
 
 
-class ResNetLSTM(nn.Module):
+class ResNetLSTM1(nn.Module):
 	def __init__(self, num_classes, is_test=False, config=None, device=None, num_lstm=5):
 		"""Compose a SSD model using the given components.
 		"""
@@ -48,76 +52,78 @@ class ResNetLSTM(nn.Module):
 		# alpha_ssd = 0.5 * alpha
 		# alpha_lstm = 0.25 * alpha
 
-
 		resnet = resnet101(pretrained=True)
 		all_modules = list(resnet.children())
-		modules = all_modules[:-4] 
+		modules = all_modules[:-4]
 		self.base_net = nn.Sequential(*modules)
 
 		modules = all_modules[6:7]
 		self.conv_final = nn.Sequential(*modules)
-		
+
 		self.num_classes = num_classes
 		self.is_test = is_test
 		self.config = config
 
-		lstm_layers = [BottleNeckLSTM(1024, 256),
-					   BottleNeckLSTM(256, 64),
-					   BottleNeckLSTM(64, 16),
-					   ConvLSTMCell(16, 16),
-					   ConvLSTMCell(16, 16)]
+		# lstm_layers = [BottleNeckLSTM(1024, 256),
+		# 			   BottleNeckLSTM(256, 64),
+		# 			   BottleNeckLSTM(64, 16),
+		# 			   ConvLSTMCell(16, 16),
+		# 			   ConvLSTMCell(16, 16)]
 		
-	
-		self.lstm_layers =  nn.ModuleList([lstm_layers[i] for i in range(num_lstm)])
+		lstm_layers = [BottleNeckLSTM(1024, 1024),
+					   BottleNeckLSTM(512, 512),
+					   BottleNeckLSTM(256, 256),
+					   ConvLSTMCell(256, 256),
+					   ConvLSTMCell(256, 256)]
+
+		self.lstm_layers = nn.ModuleList(
+			[lstm_layers[i] for i in range(num_lstm)])
 
 		self.extras = ModuleList([
-			Sequential(
-				Conv2d(in_channels=256, out_channels=128, kernel_size=1),
-				ReLU(),
-				conv_dw_1(inp=128, oup=256, kernel_size=3,
-						  stride=2, padding=1),
-				ReLU()
-			),
-			Sequential(
-				Conv2d(in_channels=64, out_channels=32, kernel_size=1),
-				ReLU(),
-				conv_dw_1(inp=32, oup=64, kernel_size=3, stride=2, padding=1),
-				ReLU()
-			),
-			Sequential(
-				Conv2d(in_channels=16, out_channels=8, kernel_size=1),
-				ReLU(),
-				conv_dw_1(inp=8, oup=16, kernel_size=3, stride=2, padding=1),
-				ReLU()
-			),
-			Sequential(
-				Conv2d(in_channels=16, out_channels=8, kernel_size=1),
-				ReLU(),
-				conv_dw_1(inp=8, oup=16, kernel_size=3, stride=2, padding=1),
-				ReLU()
-			)
+		Sequential(
+			Conv2d(in_channels=1024, out_channels=256, kernel_size=1),
+			ReLU(),
+			Conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=2, padding=1),
+			ReLU()
+		),
+		Sequential(
+			Conv2d(in_channels=512, out_channels=128, kernel_size=1),
+			ReLU(),
+			Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=2, padding=1),
+			ReLU()
+		),
+		Sequential(
+			Conv2d(in_channels=256, out_channels=128, kernel_size=1),
+			ReLU(),
+			Conv2d(in_channels=128, out_channels=256, kernel_size=3),
+			ReLU()
+		),
+		Sequential(
+			Conv2d(in_channels=256, out_channels=128, kernel_size=1),
+			ReLU(),
+			Conv2d(in_channels=128, out_channels=256, kernel_size=3),
+			ReLU()
+		)
 		])
-
 
 
 		self.regression_headers = ModuleList([
-			conv_dw_1(inp=512, oup=4 * 4, kernel_size=3, padding=1),
-			conv_dw_1(inp=256, oup=6 * 4, kernel_size=3, padding=1),
-			conv_dw_1(inp=64, oup=6 * 4, kernel_size=3, padding=1),
-			conv_dw_1(inp=16, oup=6 * 4, kernel_size=3, padding=1),
-			conv_dw_1(inp=16, oup=4 * 4, kernel_size=3, padding=1),
-			conv_dw_1(inp=16, oup=4 * 4, kernel_size=3, padding=1, stride=2),
+		Conv2d(in_channels=512, out_channels=4 * 4, kernel_size=3, padding=1),
+		Conv2d(in_channels=1024, out_channels=6 * 4, kernel_size=3, padding=1),
+		Conv2d(in_channels=512, out_channels=6 * 4, kernel_size=3, padding=1),
+		Conv2d(in_channels=256, out_channels=6 * 4, kernel_size=3, padding=1),
+		Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=3, padding=1),
+		Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=3, padding=1), # TODO: change to kernel_size=1, padding=0?
 		])
 
 		self.classification_headers = ModuleList([
-			conv_dw_1(inp=512, oup=4 * num_classes, kernel_size=3, padding=1),
-			conv_dw_1(inp=256, oup=6 * num_classes, kernel_size=3, padding=1),
-			conv_dw_1(inp=64, oup=6 * num_classes, kernel_size=3, padding=1),
-			conv_dw_1(inp=16, oup=6 * num_classes, kernel_size=3, padding=1),
-			conv_dw_1(inp=16, oup=4 * num_classes, kernel_size=3, padding=1),
-			conv_dw_1(inp=16, oup=4 * num_classes, kernel_size=3, padding=1, stride = 2),
+		Conv2d(in_channels=512, out_channels=4 * num_classes, kernel_size=3, padding=1),
+		Conv2d(in_channels=1024, out_channels=6 * num_classes, kernel_size=3, padding=1),
+		Conv2d(in_channels=512, out_channels=6 * num_classes, kernel_size=3, padding=1),
+		Conv2d(in_channels=256, out_channels=6 * num_classes, kernel_size=3, padding=1),
+		Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=3, padding=1),
+		Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=3, padding=1), # TODO: change to kernel_size=1, padding=0?
 		])
-
 
 		if device:
 			self.device = device
@@ -146,10 +152,8 @@ class ResNetLSTM(nn.Module):
 		confidences.append(confidence)
 		locations.append(location)
 
-		
-
 		for i in range(len(self.extras)):
-			if (i < len(self.lstm_layers)-1): 
+			if (i < len(self.lstm_layers)-1):
 				x = self.extras[i](x)
 				x, _ = self.lstm_layers[i+1](x)
 				confidence, location = self.compute_header(header_index, x)
@@ -162,8 +166,7 @@ class ResNetLSTM(nn.Module):
 				header_index += 1
 				confidences.append(confidence)
 				locations.append(location)
-				
-			
+
 		confidences = torch.cat(confidences, 1)
 		locations = torch.cat(locations, 1)
 
