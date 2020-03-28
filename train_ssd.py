@@ -176,7 +176,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 			# running_loss += loss.item()
 			# running_regression_loss += regression_loss.item()
 			# running_classification_loss += classification_loss.item()
-
+		print("1")
 		optimizer.zero_grad()
 		tot_loss.backward()
 		optimizer.step()
@@ -200,6 +200,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 		running_classification_loss = 0.0
 
 		net.detach_all()
+		print("2")
 	# net.detach_all()
 
 
