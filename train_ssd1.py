@@ -9,22 +9,12 @@ import torch
 from torch.utils.data import DataLoader, ConcatDataset
 from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
 from vision.utils.misc import str2bool, Timer, freeze_net_layers, store_labels
-from vision.ssd.ssd import MatchPrior
-# from vision.ssd.vgg_ssd import create_vgg_ssd
-# from vision.ssd.mobilenetv1_ssd import create_mobilenetv1_ssd
-# from vision.ssd.mobilenetv1_ssd_lite import create_mobilenetv1_ssd_lite
-# from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite
-# from vision.ssd.squeezenet_ssd_lite import create_squeezenet_ssd_lite
-# from vision.ssd.resnet50_ssd1 import create_resnet18_ssd
-from vision.ssd.ssd import SSD
-from vision.datasets.voc_dataset_video import VOCDataset
+from vision.models import MatchPrior
+from vision.models import LSTMSSD
 from vision.datasets.vid_dataset import VIDDataset
-from vision.datasets.open_images import OpenImagesDataset
 from vision.nn.multibox_loss import MultiboxLoss
-# from vision.ssd.config import vgg_ssd_config
-from vision.ssd.config import mobilenetv1_ssd_config
-# from vision.ssd.config import squeezenet_ssd_config
-from vision.ssd.data_preprocessing import TrainAugmentation, TestTransform
+from vision.models.config import mobilenetv1_ssd_config
+from vision.models.data_preprocessing import TrainAugmentation, TestTransform
 
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Training With Pytorch')
@@ -120,18 +110,11 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
     running_regression_loss = 0.0
     running_classification_loss = 0.0
     for i, data in enumerate(loader):
-        # batch , timesteps, channel, height, width
-        #videos = torch.Tensor(2,2,3,300,300)
         videos, videos_boxes, videos_labels = data
 
         videos = videos.to(device)
         videos_boxes = videos_boxes.to(device)
         videos_labels = videos_labels.to(device)
-
-        # timesteps, batch,  channel, height, width
-        # torch.Size([2, 24, 512, 38, 38])
-        # out_enc_23, out_enc_final = encoder(videos)
-        # out_dec_23, out_dec_final = decoder([out_enc_23, out_enc_final])
 
         # permute videos
         videos = videos.permute(1, 0, 2, 3, 4)
@@ -145,35 +128,20 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
         cls_loss = 0
         for j in range(videos.size(0)):
             video = videos[j]  # get image batch for each time step
-            # out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
-
-            #images = [out_dec_23_batch , out_dec_final_batch]
-
             confidence, locations = net(video)
 
-            #confidence, locations = net(images)
             regression_loss, classification_loss = criterion(
                 confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
             loss = regression_loss + classification_loss
-
-            # optimizer.zero_grad()
-            # loss.backward(retain_graph=True)
-            # optimizer.step()
 
             tot_loss += loss
             reg_loss += regression_loss
             cls_loss += classification_loss
 
-            # calculating loss for all timesteps
-            # running_loss += loss.item()
-            # running_regression_loss += regression_loss.item()
-            # running_classification_loss += classification_loss.item()
-
         optimizer.zero_grad()
         tot_loss.backward()
         optimizer.step()
 
-        # net.zero_grad()
         running_loss += tot_loss.item()
         running_regression_loss += reg_loss.item()
         running_classification_loss += cls_loss.item()
@@ -192,8 +160,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
             running_classification_loss = 0.0
 
         net.detach_all()
-    # net.detach_all()
-
+  
 
 def test(loader, net, criterion, device):
     net.eval()
@@ -224,25 +191,7 @@ if __name__ == '__main__':
     timer = Timer()
 
     logging.info(args)
-    # if args.net == 'vgg16-ssd':
-    #     create_net = create_vgg_ssd
-    #     config = vgg_ssd_config
-    # elif args.net == 'mb1-ssd':
-    #     create_net = create_mobilenetv1_ssd
-    #     config = mobilenetv1_ssd_config
-    # elif args.net == 'mb1-ssd-lite':
-    #     create_net = create_mobilenetv1_ssd_lite
-    #     config = mobilenetv1_ssd_config
-    # elif args.net == 'sq-ssd-lite':
-    #     create_net = create_squeezenet_ssd_lite
-    #     config = squeezenet_ssd_config
-    # elif args.net == 'mb2-ssd-lite':
-    #     def create_net(num): return create_mobilenetv2_ssd_lite(
-    #         num, width_mult=args.mb2_width_mult)
-    #     config = mobilenetv1_ssd_config
-    # elif args.net == 'resnet-18-ssd':
-    #     create_net = create_resnet18_ssd
-    #     config = vgg_ssd_config
+   
     if args.net == 'lstm-ssd':
         create_net = SSD
         config = mobilenetv1_ssd_config

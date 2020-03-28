@@ -16,7 +16,7 @@ from vision.ssd.ssd import MatchPrior
 # from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite
 # from vision.ssd.squeezenet_ssd_lite import create_squeezenet_ssd_lite
 # from vision.ssd.resnet50_ssd1 import create_resnet18_ssd
-from vision.ssd.ssd import SSD
+from vision.models import LSTMSSD
 from vision.datasets.voc_dataset_video import VOCDataset
 from vision.datasets.vid_dataset import VIDDataset
 from vision.datasets.open_images import OpenImagesDataset
