@@ -85,7 +85,7 @@ class BottleNeckLSTM(nn.Module):
         cell_gate = f.tanh(cell_gate)
 
         # compute current cell and hidden state
-        cell = (remember_gate * prev_cell) + (in_gate * cell_gate)
+        cell = (remember_gate * self.cell_state) + (in_gate * cell_gate)
         hidden = out_gate * f.tanh(cell)
 
         # self.prev_state = (hidden, cell)
@@ -149,7 +149,8 @@ class ConvLSTMCell(nn.Module):
         cell_gate = f.tanh(cell_gate)
 
         # compute current cell and hidden state
-        cell = (remember_gate * prev_cell) + (in_gate * cell_gate)
+        # compute current cell and hidden state
+        cell = (remember_gate * self.cell_state) + (in_gate * cell_gate)
         hidden = out_gate * f.tanh(cell)
 
         # self.prev_state = (hidden, cell)
