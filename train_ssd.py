@@ -17,6 +17,7 @@ from vision.ssd.lstm_mobilenet import MatchPrior
 # from vision.ssd.squeezenet_ssd_lite import create_squeezenet_ssd_lite
 # from vision.ssd.resnet50_ssd1 import create_resnet18_ssd
 from vision.ssd.lstm_mobilenet import MobileNetLSTM
+from vision.ssd.lstm_resnet import ResNetLSTM
 from vision.datasets.voc_dataset_video import VOCDataset
 from vision.datasets.vid_dataset import VIDDataset
 from vision.datasets.open_images import OpenImagesDataset
@@ -247,7 +248,7 @@ if __name__ == '__main__':
 		create_net = MobileNetLSTM
 		config = mobilenetv1_ssd_config
 	elif args.net == 'lstm-resnet':
-		create_net = MobileNetLSTM
+		create_net = ResNetLSTM
 		config = vgg_ssd_config
 	else:
 		logging.fatal("The net type is wrong.")
@@ -346,7 +347,7 @@ if __name__ == '__main__':
 				net.classification_headers.parameters()
 			)},
 			{'params': itertools.chain(net.lstm_layers.parameters())},
-			{'params': net.conv_13.parameters()}
+			{'params': net.conv_final.parameters()}
 
 		]
 
