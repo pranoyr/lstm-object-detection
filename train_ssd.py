@@ -150,7 +150,6 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 		tot_loss = 0
 		reg_loss = 0
 		cls_loss = 0
-		print(videos.shape)
 		for j in range(videos.size(0)):
 			video = videos[j]  # get image batch for each time step
 			# out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
@@ -176,7 +175,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 			# running_loss += loss.item()
 			# running_regression_loss += regression_loss.item()
 			# running_classification_loss += classification_loss.item()
-		print("1")
+
 		optimizer.zero_grad()
 		tot_loss.backward()
 		optimizer.step()
@@ -185,22 +184,21 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 		running_loss += tot_loss.item()
 		running_regression_loss += reg_loss.item()
 		running_classification_loss += cls_loss.item()
-		# if i and i % debug_steps == 0:
-		avg_loss = running_loss / debug_steps
-		avg_reg_loss = running_regression_loss / debug_steps
-		avg_clf_loss = running_classification_loss / debug_steps
-		print(
-			f"Epoch: {epoch}, Step: {i}, " +
-			f"Average Loss: {avg_loss:.4f}, " +
-			f"Average Regression Loss {avg_reg_loss:.4f}, " +
-			f"Average Classification Loss: {avg_clf_loss:.4f}"
-		)
-		running_loss = 0.0
-		running_regression_loss = 0.0
-		running_classification_loss = 0.0
+		if i and i % debug_steps == 0:
+			avg_loss = running_loss / debug_steps
+			avg_reg_loss = running_regression_loss / debug_steps
+			avg_clf_loss = running_classification_loss / debug_steps
+			print(
+				f"Epoch: {epoch}, Step: {i}, " +
+				f"Average Loss: {avg_loss:.4f}, " +
+				f"Average Regression Loss {avg_reg_loss:.4f}, " +
+				f"Average Classification Loss: {avg_clf_loss:.4f}"
+			)
+			running_loss = 0.0
+			running_regression_loss = 0.0
+			running_classification_loss = 0.0
 
 		net.detach_all()
-		print("2")
 	# net.detach_all()
 
 
