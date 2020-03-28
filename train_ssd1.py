@@ -12,7 +12,7 @@ from vision.utils.misc import str2bool, Timer, freeze_net_layers, store_labels
 from vision.models import MatchPrior
 from vision.models import LSTMSSD
 from vision.datasets.vid_dataset import VIDDataset
-from vision.nn.multibox_loss import MultiboxLoss
+from vision.utils.multibox_loss import MultiboxLoss
 from vision.models.config import mobilenetv1_ssd_config
 from vision.models.data_preprocessing import TrainAugmentation, TestTransform
 
@@ -193,7 +193,7 @@ if __name__ == '__main__':
     logging.info(args)
    
     if args.net == 'lstm-ssd':
-        create_net = SSD
+        create_net = LSTMSSD
         config = mobilenetv1_ssd_config
     else:
         logging.fatal("The net type is wrong.")
@@ -214,18 +214,9 @@ if __name__ == '__main__':
         if args.dataset_type == 'vid':
             dataset = VIDDataset(dataset_path, transform=train_transform,
                                  target_transform=target_transform)
-            # label_file = os.path.join(
-            #     args.checkpoint_folder, "voc-model-labels.txt")
-            # store_labels(label_file, dataset.class_names)
-            num_classes = len(dataset.class_names)
-        elif args.dataset_type == 'open_images':
-            dataset = OpenImagesDataset(dataset_path,
-                                        transform=train_transform, target_transform=target_transform,
-                                        dataset_type="train", balance_data=args.balance_data)
             label_file = os.path.join(
-                args.checkpoint_folder, "open-images-model-labels.txt")
+                args.checkpoint_folder, "voc-model-labels.txt")
             store_labels(label_file, dataset.class_names)
-            logging.info(dataset)
             num_classes = len(dataset.class_names)
 
         else:
@@ -238,15 +229,15 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_dataset, args.batch_size,
                               num_workers=args.num_workers,
                               shuffle=False)
-    logging.info("Prepare Validation datasets.")
-    if args.dataset_type == "voc":
-        val_dataset = VOCDataset(args.validation_dataset, transform=test_transform,
-                                 target_transform=target_transform, is_test=True)
-    elif args.dataset_type == 'open_images':
-        val_dataset = OpenImagesDataset(dataset_path,
-                                        transform=test_transform, target_transform=target_transform,
-                                        dataset_type="test")
-        logging.info(val_dataset)
+    # logging.info("Prepare Validation datasets.")
+    # if args.dataset_type == "voc":
+    #     val_dataset = VOCDataset(args.validation_dataset, transform=test_transform,
+    #                              target_transform=target_transform, is_test=True)
+    # elif args.dataset_type == 'open_images':
+    #     val_dataset = OpenImagesDataset(dataset_path,
+    #                                     transform=test_transform, target_transform=target_transform,
+    #                                     dataset_type="test")
+        # logging.info(val_dataset)
     #logging.info("validation dataset size: {}".format(len(val_dataset)))
 
     # val_loader = DataLoader(val_dataset, args.batch_size,
@@ -314,8 +305,7 @@ if __name__ == '__main__':
         f'Took {timer.end("Load Model"):.2f} seconds to load the model.')
 
     net.to(DEVICE)
-    # print(net.parameters)
-
+    
     criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=10,
                              center_variance=0.1, size_variance=0.2, device=DEVICE)
     optimizer = torch.optim.RMSprop(
