@@ -4,18 +4,18 @@ import numpy as np
 from typing import List, Tuple
 import torch.nn.functional as F
 
-from ..utils import box_utils
-from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
-from .conv_lstm import ConvLSTMCell
-from .conv_lstm import BottleNeckLSTM
-from torchvision.models import resnet101
-
-# import box_utils
+# from ..utils import box_utils
 # from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
-# from conv_lstm import ConvLSTMCell
-# from conv_lstm import BottleNeckLSTM
-# import mobilenetv1_ssd_config as config
+# from .conv_lstm import ConvLSTMCell
+# from .conv_lstm import BottleNeckLSTM
 # from torchvision.models import resnet101
+
+import box_utils
+from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
+from conv_lstm import ConvLSTMCell
+from conv_lstm import BottleNeckLSTM
+import mobilenetv1_ssd_config as config
+from torchvision.models import resnet101
 
 
 def conv_dw(inp, oup, stride):
@@ -30,13 +30,13 @@ def conv_dw(inp, oup, stride):
 	)
 
 
-def conv_dw_1(inp, oup, kernel_size=3, padding=0, stride=1):
+def conv_depthwise_seperable(in_channels, out_channels, kernel_size=3, padding=0, stride=1):
 	return nn.Sequential(
-		nn.Conv2d(inp, inp, kernel_size, stride,
-				  padding, groups=inp, bias=False),
+		nn.Conv2d(in_channels, in_channels, kernel_size, stride,
+				  padding, groups=in_channels, bias=False),
 		nn.ReLU(inplace=True),
 
-		nn.Conv2d(inp, oup, 1, 1, 0, bias=False),
+		nn.Conv2d(in_channels, out_channels, 1, 1, 0, bias=False),
 
 	)
 
@@ -70,59 +70,59 @@ class ResNetLSTM1(nn.Module):
 		# 			   ConvLSTMCell(16, 16),
 		# 			   ConvLSTMCell(16, 16)]
 		
-		lstm_layers = [BottleNeckLSTM(1024, 1024),
-					   BottleNeckLSTM(512, 512),
-					   BottleNeckLSTM(256, 256),
-					   ConvLSTMCell(256, 256),
-					   ConvLSTMCell(256, 256)]
+		lstm_layers = [BottleNeckLSTM(1024, 256),
+					   BottleNeckLSTM(256, 64),
+					   BottleNeckLSTM(64, 16),
+					   ConvLSTMCell(16, 16),
+					   ConvLSTMCell(16, 16)]
 
 		self.lstm_layers = nn.ModuleList(
 			[lstm_layers[i] for i in range(num_lstm)])
 
 		self.extras = ModuleList([
 		Sequential(
-			Conv2d(in_channels=1024, out_channels=256, kernel_size=1),
+			conv_depthwise_seperable(in_channels=256, out_channels=128, kernel_size=1),
 			ReLU(),
-			Conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=2, padding=1),
+			conv_depthwise_seperable(in_channels=128, out_channels=256, kernel_size=3, stride=2, padding=1),
 			ReLU()
 		),
 		Sequential(
-			Conv2d(in_channels=512, out_channels=128, kernel_size=1),
+			conv_depthwise_seperable(in_channels=64, out_channels=32, kernel_size=1),
 			ReLU(),
-			Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=2, padding=1),
+			conv_depthwise_seperable(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1),
 			ReLU()
 		),
 		Sequential(
-			Conv2d(in_channels=256, out_channels=128, kernel_size=1),
+			conv_depthwise_seperable(in_channels=16, out_channels=8, kernel_size=1),
 			ReLU(),
-			Conv2d(in_channels=128, out_channels=256, kernel_size=3),
+			conv_depthwise_seperable(in_channels=8, out_channels=16, kernel_size=3),
 			ReLU()
 		),
 		Sequential(
-			Conv2d(in_channels=256, out_channels=128, kernel_size=1),
+			conv_depthwise_seperable(in_channels=16, out_channels=8, kernel_size=1),
 			ReLU(),
-			Conv2d(in_channels=128, out_channels=256, kernel_size=3),
+			conv_depthwise_seperable(in_channels=8, out_channels=16, kernel_size=3),
 			ReLU()
 		)
 		])
 
 
 		self.regression_headers = ModuleList([
-		Conv2d(in_channels=512, out_channels=4 * 4, kernel_size=3, padding=1),
-		Conv2d(in_channels=1024, out_channels=6 * 4, kernel_size=3, padding=1),
-		Conv2d(in_channels=512, out_channels=6 * 4, kernel_size=3, padding=1),
-		Conv2d(in_channels=256, out_channels=6 * 4, kernel_size=3, padding=1),
-		Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=3, padding=1),
-		Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=3, padding=1), # TODO: change to kernel_size=1, padding=0?
+		conv_depthwise_seperable(in_channels=512, out_channels=4 * 4, kernel_size=3, padding=1),
+		conv_depthwise_seperable(in_channels=256, out_channels=6 * 4, kernel_size=3, padding=1),
+		conv_depthwise_seperable(in_channels=64, out_channels=6 * 4, kernel_size=3, padding=1),
+		conv_depthwise_seperable(in_channels=16, out_channels=6 * 4, kernel_size=3, padding=1),
+		conv_depthwise_seperable(in_channels=16, out_channels=4 * 4, kernel_size=3, padding=1),
+		conv_depthwise_seperable(in_channels=16, out_channels=4 * 4, kernel_size=3, padding=1), # TODO: change to kernel_size=1, padding=0?
 		])
 
 		self.classification_headers = ModuleList([
-		Conv2d(in_channels=512, out_channels=4 * num_classes, kernel_size=3, padding=1),
-		Conv2d(in_channels=1024, out_channels=6 * num_classes, kernel_size=3, padding=1),
-		Conv2d(in_channels=512, out_channels=6 * num_classes, kernel_size=3, padding=1),
-		Conv2d(in_channels=256, out_channels=6 * num_classes, kernel_size=3, padding=1),
-		Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=3, padding=1),
-		Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=3, padding=1), # TODO: change to kernel_size=1, padding=0?
+		conv_depthwise_seperable(in_channels=512, out_channels=4 * num_classes, kernel_size=3, padding=1),
+		conv_depthwise_seperable(in_channels=256, out_channels=6 * num_classes, kernel_size=3, padding=1),
+		conv_depthwise_seperable(in_channels=64, out_channels=6 * num_classes, kernel_size=3, padding=1),
+		conv_depthwise_seperable(in_channels=16, out_channels=6 * num_classes, kernel_size=3, padding=1),
+		conv_depthwise_seperable(in_channels=16, out_channels=4 * num_classes, kernel_size=3, padding=1),
+		conv_depthwise_seperable(in_channels=16, out_channels=4 * num_classes, kernel_size=3, padding=1), # TODO: change to kernel_size=1, padding=0?
 		])
 
 		if device:
@@ -259,7 +259,7 @@ def _xavier_init_(m: nn.Module):
 
 
 if __name__ == '__main__':
-	model = ResNetLSTM(num_classes=21, config=config)
+	model = ResNetLSTM1(num_classes=21, config=config)
 	i = torch.Tensor(1, 3, 300, 300)
 	confidences, locations = model(i)
 	print(confidences.shape)
