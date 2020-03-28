@@ -150,6 +150,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 		tot_loss = 0
 		reg_loss = 0
 		cls_loss = 0
+		print(videos.shape)
 		for j in range(videos.size(0)):
 			video = videos[j]  # get image batch for each time step
 			# out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
