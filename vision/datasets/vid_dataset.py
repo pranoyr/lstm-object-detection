@@ -30,7 +30,7 @@ class VIDDataset:
 			image_sets_file = os.path.join(self.root, "ImageSets/VID/test.txt")
 		else:
 			image_sets_file = os.path.join(
-				self.root, "ImageSets/VID/train.txt")
+				self.root, "ImageSets/VID/train_10.txt")
 
 		#self.video_ids = get_video_ids(image_sets_file)
 		self.video_ids = VIDDataset._read_image_ids(image_sets_file)
