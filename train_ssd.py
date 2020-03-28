@@ -265,9 +265,9 @@ if __name__ == '__main__':
 		if args.dataset_type == 'vid':
 			dataset = VIDDataset(dataset_path, transform=train_transform,
 								 target_transform=target_transform)
-			# label_file = os.path.join(
-			#     args.checkpoint_folder, "voc-model-labels.txt")
-			# store_labels(label_file, dataset.class_names)
+			label_file = os.path.join(
+			    args.checkpoint_folder, "voc-model-labels.txt")
+			store_labels(label_file, dataset.class_names)
 			num_classes = len(dataset.class_names)
 		elif args.dataset_type == 'open_images':
 			dataset = OpenImagesDataset(dataset_path,
@@ -283,7 +283,7 @@ if __name__ == '__main__':
 			raise ValueError(
 				f"Dataset tpye {args.dataset_type} is not supported.")
 		datasets.append(dataset)
-	# logging.info(f"Stored labels into file {label_file}.")
+	logging.info(f"Stored labels into file {label_file}.")
 	train_dataset = ConcatDataset(datasets)
 	logging.info("Train dataset size: {}".format(len(train_dataset)))
 	train_loader = DataLoader(train_dataset, args.batch_size,
@@ -342,7 +342,7 @@ if __name__ == '__main__':
 				net.regression_headers.parameters(),
 				net.classification_headers.parameters()
 			)},
-			{'params': net.BottleneckLSTM_1.parameters()},
+			{'params': itertools.chain(net.lstm_layers)},
 			{'params': net.conv_13.parameters()}
 
 		]
