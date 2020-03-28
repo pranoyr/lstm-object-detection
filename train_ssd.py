@@ -27,15 +27,21 @@ from vision.ssd.config import vgg_ssd_config
 from vision.ssd.config import mobilenetv1_ssd_config
 # from vision.ssd.config import squeezenet_ssd_config
 from vision.ssd.data_preprocessing import TrainAugmentation, TestTransform
+import random
+import numpy as np
 from args import parser
 
 args = parser.parse_args()
 
 DEVICE = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 
-if args.use_cuda and torch.cuda.is_available():
-	torch.backends.cudnn.benchmark = True
-	logging.info("Use Cuda.")
+if torch.cuda.is_available():
+	seed = 0
+	random.seed(seed)
+	np.random.seed(seed)
+	torch.manual_seed(seed)
+	torch.backends.cudnn.deterministic = True
+	torch.backends.cudnn.benchmark = False
 
 
 # def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
