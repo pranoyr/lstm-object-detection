@@ -113,162 +113,162 @@ if args.use_cuda and torch.cuda.is_available():
 	logging.info("Use Cuda.")
 
 
-def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
-    net.train(True)
-    # encoder.train()
-    # decoder.train()
-
-    running_loss = 0.0
-    running_regression_loss = 0.0
-    running_classification_loss = 0.0
-    for i, data in enumerate(loader):
-
-        # batch , timesteps, channel, height, width
-        #videos = torch.Tensor(2,2,3,300,300)
-        videos, videos_boxes, videos_labels = data
-
-        videos = videos.to(device)
-        videos_boxes = videos_boxes.to(device)
-        videos_labels = videos_labels.to(device)
-
-        # timesteps, batch,  channel, height, width
-        # torch.Size([2, 24, 512, 38, 38])
-        # out_enc_23, out_enc_final = encoder(videos)
-        # out_dec_23, out_dec_final = decoder([out_enc_23, out_enc_final])
-
-        # permute videos
-        videos = videos.permute(1, 0, 2, 3, 4)
-
-        # permute boxes and labels to match videos size
-        videos_boxes = videos_boxes.permute(1, 0, 2, 3)
-        videos_labels = videos_labels.permute(1, 0, 2)
-
-        for j in range(videos.size(0)):
-            video = videos[j, :, :, :, :]  # get image batch for each time step
-            # out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
-
-            #images = [out_dec_23_batch , out_dec_final_batch]
-
-            confidence, locations = net(video)
-
-            #confidence, locations = net(images)
-            regression_loss, classification_loss = criterion(
-                confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
-            loss = regression_loss + classification_loss
-
-            optimizer.zero_grad()
-            loss.backward(retain_graph=True)
-            optimizer.step()
-
-            # calculating loss for all timesteps
-            running_loss += loss.item()
-            running_regression_loss += regression_loss.item()
-            running_classification_loss += classification_loss.item()
-
-        # net.zero_grad()
-        # running_loss += total_loss.item()
-        # running_regression_loss += total_regression_loss.item()
-        # running_classification_loss += total_classification_loss.item()
-        if i and i % debug_steps == 0:
-            avg_loss = running_loss / debug_steps
-            avg_reg_loss = running_regression_loss / debug_steps
-            avg_clf_loss = running_classification_loss / debug_steps
-            logging.info(
-                f"Epoch: {epoch}, Step: {i}, " +
-                f"Average Loss: {avg_loss:.4f}, " +
-                f"Average Regression Loss {avg_reg_loss:.4f}, " +
-                f"Average Classification Loss: {avg_clf_loss:.4f}"
-            )
-            running_loss = 0.0
-            running_regression_loss = 0.0
-            running_classification_loss = 0.0
-
-        net.detach_all()
-    net.detach_all()
-
-
 # def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
-# 	net.train(True)
-# 	# encoder.train()
-# 	# decoder.train()
+#     net.train(True)
+#     # encoder.train()
+#     # decoder.train()
 
-# 	running_loss = 0.0
-# 	running_regression_loss = 0.0
-# 	running_classification_loss = 0.0
-# 	for i, data in enumerate(loader):
-# 		# batch , timesteps, channel, height, width
-# 		#videos = torch.Tensor(2,2,3,300,300)
-# 		videos, videos_boxes, videos_labels = data
+#     running_loss = 0.0
+#     running_regression_loss = 0.0
+#     running_classification_loss = 0.0
+#     for i, data in enumerate(loader):
 
-# 		videos = videos.to(device)
-# 		videos_boxes = videos_boxes.to(device)
-# 		videos_labels = videos_labels.to(device)
+#         # batch , timesteps, channel, height, width
+#         #videos = torch.Tensor(2,2,3,300,300)
+#         videos, videos_boxes, videos_labels = data
 
-# 		# timesteps, batch,  channel, height, width
-# 		# torch.Size([2, 24, 512, 38, 38])
-# 		# out_enc_23, out_enc_final = encoder(videos)
-# 		# out_dec_23, out_dec_final = decoder([out_enc_23, out_enc_final])
+#         videos = videos.to(device)
+#         videos_boxes = videos_boxes.to(device)
+#         videos_labels = videos_labels.to(device)
 
-# 		# permute videos
-# 		videos = videos.permute(1, 0, 2, 3, 4)
+#         # timesteps, batch,  channel, height, width
+#         # torch.Size([2, 24, 512, 38, 38])
+#         # out_enc_23, out_enc_final = encoder(videos)
+#         # out_dec_23, out_dec_final = decoder([out_enc_23, out_enc_final])
 
-# 		# permute boxes and labels to match videos size
-# 		videos_boxes = videos_boxes.permute(1, 0, 2, 3)
-# 		videos_labels = videos_labels.permute(1, 0, 2)
+#         # permute videos
+#         videos = videos.permute(1, 0, 2, 3, 4)
 
-# 		tot_loss = 0
-# 		reg_loss = 0
-# 		cls_loss = 0
-# 		for j in range(videos.size(0)):
-# 			video = videos[j]  # get image batch for each time step
-# 			# out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
+#         # permute boxes and labels to match videos size
+#         videos_boxes = videos_boxes.permute(1, 0, 2, 3)
+#         videos_labels = videos_labels.permute(1, 0, 2)
 
-# 			#images = [out_dec_23_batch , out_dec_final_batch]
+#         for j in range(videos.size(0)):
+#             video = videos[j, :, :, :, :]  # get image batch for each time step
+#             # out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
 
-# 			confidence, locations = net(video)
+#             #images = [out_dec_23_batch , out_dec_final_batch]
 
-# 			#confidence, locations = net(images)
-# 			regression_loss, classification_loss = criterion(
-# 				confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
-# 			loss = regression_loss + classification_loss
+#             confidence, locations = net(video)
 
-# 			# optimizer.zero_grad()
-# 			# loss.backward(retain_graph=True)
-# 			# optimizer.step()
+#             #confidence, locations = net(images)
+#             regression_loss, classification_loss = criterion(
+#                 confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
+#             loss = regression_loss + classification_loss
 
-# 			tot_loss += loss
-# 			reg_loss += regression_loss
-# 			cls_loss += classification_loss
+#             optimizer.zero_grad()
+#             loss.backward(retain_graph=True)
+#             optimizer.step()
 
-# 			# calculating loss for all timesteps
-# 			# running_loss += loss.item()
-# 			# running_regression_loss += regression_loss.item()
-# 			# running_classification_loss += classification_loss.item()
+#             # calculating loss for all timesteps
+#             running_loss += loss.item()
+#             running_regression_loss += regression_loss.item()
+#             running_classification_loss += classification_loss.item()
 
-# 		optimizer.zero_grad()
-# 		tot_loss.backward()
-# 		optimizer.step()
+#         # net.zero_grad()
+#         # running_loss += total_loss.item()
+#         # running_regression_loss += total_regression_loss.item()
+#         # running_classification_loss += total_classification_loss.item()
+#         if i and i % debug_steps == 0:
+#             avg_loss = running_loss / debug_steps
+#             avg_reg_loss = running_regression_loss / debug_steps
+#             avg_clf_loss = running_classification_loss / debug_steps
+#             logging.info(
+#                 f"Epoch: {epoch}, Step: {i}, " +
+#                 f"Average Loss: {avg_loss:.4f}, " +
+#                 f"Average Regression Loss {avg_reg_loss:.4f}, " +
+#                 f"Average Classification Loss: {avg_clf_loss:.4f}"
+#             )
+#             running_loss = 0.0
+#             running_regression_loss = 0.0
+#             running_classification_loss = 0.0
 
-# 		# net.zero_grad()
-# 		running_loss += tot_loss.item()
-# 		running_regression_loss += reg_loss.item()
-# 		running_classification_loss += cls_loss.item()
-# 		if i and i % debug_steps == 0:
-# 			avg_loss = running_loss / debug_steps
-# 			avg_reg_loss = running_regression_loss / debug_steps
-# 			avg_clf_loss = running_classification_loss / debug_steps
-# 			logging.info(
-# 				f"Epoch: {epoch}, Step: {i}, " +
-# 				f"Average Loss: {avg_loss:.4f}, " +
-# 				f"Average Regression Loss {avg_reg_loss:.4f}, " +
-# 				f"Average Classification Loss: {avg_clf_loss:.4f}"
-# 			)
-# 			running_loss = 0.0
-# 			running_regression_loss = 0.0
-# 			running_classification_loss = 0.0
+#         net.detach_all()
+#     net.detach_all()
 
-# 		net.detach_all()
-# 	# net.detach_all()
+
+def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
+	net.train(True)
+	# encoder.train()
+	# decoder.train()
+
+	running_loss = 0.0
+	running_regression_loss = 0.0
+	running_classification_loss = 0.0
+	for i, data in enumerate(loader):
+		# batch , timesteps, channel, height, width
+		#videos = torch.Tensor(2,2,3,300,300)
+		videos, videos_boxes, videos_labels = data
+
+		videos = videos.to(device)
+		videos_boxes = videos_boxes.to(device)
+		videos_labels = videos_labels.to(device)
+
+		# timesteps, batch,  channel, height, width
+		# torch.Size([2, 24, 512, 38, 38])
+		# out_enc_23, out_enc_final = encoder(videos)
+		# out_dec_23, out_dec_final = decoder([out_enc_23, out_enc_final])
+
+		# permute videos
+		videos = videos.permute(1, 0, 2, 3, 4)
+
+		# permute boxes and labels to match videos size
+		videos_boxes = videos_boxes.permute(1, 0, 2, 3)
+		videos_labels = videos_labels.permute(1, 0, 2)
+
+		tot_loss = 0
+		reg_loss = 0
+		cls_loss = 0
+		for j in range(videos.size(0)):
+			video = videos[j]  # get image batch for each time step
+			# out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
+
+			#images = [out_dec_23_batch , out_dec_final_batch]
+
+			confidence, locations = net(video)
+
+			#confidence, locations = net(images)
+			regression_loss, classification_loss = criterion(
+				confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
+			loss = regression_loss + classification_loss
+
+			# optimizer.zero_grad()
+			# loss.backward(retain_graph=True)
+			# optimizer.step()
+
+			tot_loss += loss
+			reg_loss += regression_loss
+			cls_loss += classification_loss
+
+			# calculating loss for all timesteps
+			# running_loss += loss.item()
+			# running_regression_loss += regression_loss.item()
+			# running_classification_loss += classification_loss.item()
+
+		optimizer.zero_grad()
+		tot_loss.backward()
+		optimizer.step()
+
+		# net.zero_grad()
+		running_loss += tot_loss.item()
+		running_regression_loss += reg_loss.item()
+		running_classification_loss += cls_loss.item()
+		if i and i % debug_steps == 0:
+			avg_loss = running_loss / debug_steps
+			avg_reg_loss = running_regression_loss / debug_steps
+			avg_clf_loss = running_classification_loss / debug_steps
+			logging.info(
+				f"Epoch: {epoch}, Step: {i}, " +
+				f"Average Loss: {avg_loss:.4f}, " +
+				f"Average Regression Loss {avg_reg_loss:.4f}, " +
+				f"Average Classification Loss: {avg_clf_loss:.4f}"
+			)
+			running_loss = 0.0
+			running_regression_loss = 0.0
+			running_classification_loss = 0.0
+
+		net.detach_all()
+	# net.detach_all()
 
 
 def test(loader, net, criterion, device):
