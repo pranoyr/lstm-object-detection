@@ -3,14 +3,16 @@ import torch
 import numpy as np
 from typing import List, Tuple
 import torch.nn.functional as F
+from resnet import resnet101
 
-
-from ..utils import box_utils
-# import box_utils
+# from ..utils import box_utils
+import box_utils
 from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
-from .conv_lstm import ConvLSTMCell
-from .conv_lstm import BottleNeckLSTM
-# import mobilenetv1_ssd_config as config
+from conv_lstm import ConvLSTMCell
+from conv_lstm import BottleNeckLSTM
+import mobilenetv1_ssd_config as config
+# from resnet import resnet101
+from torchvision.models import resnet101
 
 # borrowed from "https://github.com/marvis/pytorch-mobilenet"
 
@@ -38,53 +40,27 @@ def conv_dw_1(inp, oup, kernel_size=3, padding=0, stride=1):
 	)
 
 
-class MobileNetV1(nn.Module):
-	""" MobileNetV1
-	"""
-
-	def __init__(self):
-		super(MobileNetV1, self).__init__()
-
-		def conv_bn(inp, oup, stride):
-			return nn.Sequential(
-				nn.Conv2d(inp, oup, 3, stride, 1, bias=False),
-				nn.BatchNorm2d(oup),
-				nn.ReLU(inplace=True)
-			)
-
-		self.model = nn.Sequential(
-			conv_bn(3, 32, 2),
-			conv_dw(32, 64, 1),
-			conv_dw(64, 128, 2),
-			conv_dw(128, 128, 1),
-			conv_dw(128, 256, 2),
-			conv_dw(256, 256, 1),
-			conv_dw(256, 512, 2),
-			conv_dw(512, 512, 1),
-			conv_dw(512, 512, 1),
-			conv_dw(512, 512, 1),
-			conv_dw(512, 512, 1),
-			conv_dw(512, 512, 1),
-		)
-
-	def forward(self, x):
-		x = self.model(x)
-		return x
-
-
-class MobileNetLSTM(nn.Module):
+class ResNetLSTM(nn.Module):
 	def __init__(self, num_classes, is_test=False, config=None, device=None, num_lstm=3):
 		"""Compose a SSD model using the given components.
 		"""
-		super(MobileNetLSTM, self).__init__()
+		super(ResNetLSTM, self).__init__()
 
 		# alpha = 1
 		# alpha_base = alpha
 		# alpha_ssd = 0.5 * alpha
 		# alpha_lstm = 0.25 * alpha
 
+
+		resnet = resnet101(pretrained=True)
+		all_modules = list(resnet.children())
+		modules = all_modules[:-4] 
+		self.base_net = nn.Sequential(*modules)
+
+		modules = all_modules[6:7]
+		self.conv_final = nn.Sequential(*modules)
+		
 		self.num_classes = num_classes
-		self.base_net = MobileNetV1()
 		self.is_test = is_test
 		self.config = config
 
@@ -125,6 +101,8 @@ class MobileNetLSTM(nn.Module):
 			)
 		])
 
+
+
 		self.regression_headers = ModuleList([
 			conv_dw_1(inp=512, oup=6 * 4, kernel_size=3, padding=1),
 			conv_dw_1(inp=256, oup=6 * 4, kernel_size=3, padding=1),
@@ -143,7 +121,6 @@ class MobileNetLSTM(nn.Module):
 			conv_dw_1(inp=16, oup=6 * num_classes, kernel_size=3, padding=1),
 		])
 
-		self.conv_final = conv_dw(512, 1024, 2)
 
 		if device:
 			self.device = device
@@ -159,15 +136,14 @@ class MobileNetLSTM(nn.Module):
 		locations = []
 		header_index = 0
 
-		# 12 conv features
-		x = self.conv_final(x)
+		x = self.base_net(x)
 		confidence, location = self.compute_header(header_index, x)
 		header_index += 1
 		confidences.append(confidence)
 		locations.append(location)
 
 
-		x = self.conv_13(x)
+		x = self.conv_final(x)
 		x, _ = self.lstm_layers[0](x)
 		confidence, location = self.compute_header(header_index, x)
 		header_index += 1
@@ -282,8 +258,8 @@ def _xavier_init_(m: nn.Module):
 
 
 if __name__ == '__main__':
-	model = MobileNetLSTM(num_classes=21, config=config)
-	i = torch.Tensor(1, 3, 150, 150)
+	model = ResNetLSTM(num_classes=21, config=config)
+	i = torch.Tensor(1, 3, 300, 300)
 	confidences, locations = model(i)
 	print(confidences.shape)
 	print(locations.shape)
