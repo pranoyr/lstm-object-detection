@@ -21,7 +21,7 @@ from vision.datasets.voc_dataset_video import VOCDataset
 from vision.datasets.vid_dataset import VIDDataset
 from vision.datasets.open_images import OpenImagesDataset
 from vision.nn.multibox_loss import MultiboxLoss
-# from vision.ssd.config import vgg_ssd_config
+from vision.ssd.config import vgg_ssd_config
 from vision.ssd.config import mobilenetv1_ssd_config
 # from vision.ssd.config import squeezenet_ssd_config
 from vision.ssd.data_preprocessing import TrainAugmentation, TestTransform
@@ -246,6 +246,9 @@ if __name__ == '__main__':
 	if args.net == 'lstm-mobilenet':
 		create_net = MobileNetLSTM
 		config = mobilenetv1_ssd_config
+	elif args.net == 'lstm-resnet':
+		create_net = MobileNetLSTM
+		config = vgg_ssd_config
 	else:
 		logging.fatal("The net type is wrong.")
 		parser.print_help(sys.stderr)
@@ -266,7 +269,7 @@ if __name__ == '__main__':
 			dataset = VIDDataset(dataset_path, transform=train_transform,
 								 target_transform=target_transform)
 			label_file = os.path.join(
-			    args.checkpoint_folder, "voc-model-labels.txt")
+				args.checkpoint_folder, "voc-model-labels.txt")
 			store_labels(label_file, dataset.class_names)
 			num_classes = len(dataset.class_names)
 		elif args.dataset_type == 'open_images':
