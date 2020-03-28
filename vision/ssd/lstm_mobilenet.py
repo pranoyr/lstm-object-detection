@@ -5,11 +5,12 @@ from typing import List, Tuple
 import torch.nn.functional as F
 
 
-from ..utils import box_utils
+# from ..utils import box_utils
+import box_utils
 from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
-from .conv_lstm import ConvLSTMCell
-from .conv_lstm import BottleNeckLSTM
-# import mobilenetv1_ssd_config as config
+from conv_lstm import ConvLSTMCell
+from conv_lstm import BottleNeckLSTM
+import mobilenetv1_ssd_config as config
 
 # borrowed from "https://github.com/marvis/pytorch-mobilenet"
 
@@ -25,13 +26,15 @@ def conv_dw(inp, oup, stride):
 		nn.ReLU(inplace=True),
 	)
 
+
 def conv_dw_1(inp, oup, kernel_size=3, padding=0, stride=1):
-		return nn.Sequential(
-		nn.Conv2d(inp, inp, kernel_size, stride, padding, groups=inp, bias=False),
+	return nn.Sequential(
+		nn.Conv2d(inp, inp, kernel_size, stride,
+				  padding, groups=inp, bias=False),
 		nn.ReLU(inplace=True),
-		
+
 		nn.Conv2d(inp, oup, 1, 1, 0, bias=False),
-		
+
 	)
 
 
@@ -69,11 +72,11 @@ class MobileNetV1(nn.Module):
 		return x
 
 
-class SSD(nn.Module):
-	def __init__(self, num_classes, is_test=False, config=None, device=None):
+class MobileNetLSTM(nn.Module):
+	def __init__(self, num_classes, is_test=False, config=None, device=None, num_lstm=1):
 		"""Compose a SSD model using the given components.
 		"""
-		super(SSD, self).__init__()
+		super(MobileNetLSTM, self).__init__()
 
 		# alpha = 1
 		# alpha_base = alpha
@@ -85,17 +88,21 @@ class SSD(nn.Module):
 		self.is_test = is_test
 		self.config = config
 
-		self.BottleneckLSTM_1 = BottleNeckLSTM(1024, 256)
-		self.BottleneckLSTM_2 = BottleNeckLSTM(256, 64)
-		self.BottleneckLSTM_3 = BottleNeckLSTM(64, 16)
-		self.BottleneckLSTM_4 = ConvLSTMCell(16, 16)
-		self.BottleneckLSTM_5 = ConvLSTMCell(16, 16)
+		lstm_layers = [BottleNeckLSTM(1024, 256),
+					   BottleNeckLSTM(256, 64),
+					   BottleNeckLSTM(64, 16),
+					   ConvLSTMCell(16, 16),
+					   ConvLSTMCell(16, 16)]
+		
+	
+		self.lstm_layers =  nn.ModuleList([lstm_layers[i] for i in range(num_lstm)])
 
 		self.extras = ModuleList([
 			Sequential(
 				Conv2d(in_channels=256, out_channels=128, kernel_size=1),
 				ReLU(),
-				conv_dw_1(inp=128, oup=256, kernel_size=3, stride=2, padding=1),
+				conv_dw_1(inp=128, oup=256, kernel_size=3,
+						  stride=2, padding=1),
 				ReLU()
 			),
 			Sequential(
@@ -117,8 +124,6 @@ class SSD(nn.Module):
 				ReLU()
 			)
 		])
-
-
 
 		self.regression_headers = ModuleList([
 			conv_dw_1(inp=512, oup=6 * 4, kernel_size=3, padding=1),
@@ -161,53 +166,45 @@ class SSD(nn.Module):
 		confidences.append(confidence)
 		locations.append(location)
 
+
 		x = self.conv_13(x)
-		state = self.BottleneckLSTM_1(x)
-		x = state[0]
+		x, _ = self.lstm_layers[0](x)
 		confidence, location = self.compute_header(header_index, x)
 		header_index += 1
 		confidences.append(confidence)
 		locations.append(location)
 
-		x = self.extras[0](x)
-		state = self.BottleneckLSTM_2(x)
-		x = state[0]
-		confidence, location = self.compute_header(header_index, x)
-		header_index += 1
-		confidences.append(confidence)
-		locations.append(location)
-
-		x = self.extras[1](x)
-		state = self.BottleneckLSTM_3(x)
-		x = state[0]
-		confidence, location = self.compute_header(header_index, x)
-		header_index += 1
-		confidences.append(confidence)
-		locations.append(location)
-
-		x = self.extras[2](x)
-		state = self.BottleneckLSTM_4(x)
-		x = state[0]
-		confidence, location = self.compute_header(header_index, x)
-		header_index += 1
-		confidences.append(confidence)
-		locations.append(location)
-
-		x = self.extras[3](x)
-		state = self.BottleneckLSTM_5(x)
-		x = state[0]
-		confidence, location = self.compute_header(header_index, x)
-		header_index += 1
-		confidences.append(confidence)
-		locations.append(location)
-
+		for i in range(len(self.extras)):
+			print(header_index)
+			x = self.extras[i](x)
+			confidence, location = self.compute_header(header_index, x)
+			header_index += 1
+			confidences.append(confidence)
+			locations.append(location)
+			# print("****")
+			# print(len(self.lstm_layers)-1)
+			# if (i < len(self.lstm_layers)-1):
+			# 	x = self.extras[i](x)
+			# 	x, _ = self.lstm_layers[i+1](x)
+			# 	confidence, location = self.compute_header(header_index, x)
+			# 	header_index += 1
+			# 	confidences.append(confidence)
+			# 	locations.append(location)
+			# else:
+			# 	x = self.extras[i](x)
+			# 	confidence, location = self.compute_header(header_index, x)
+			# 	header_index += 1
+			# 	confidences.append(confidence)
+			# 	locations.append(location)
+				
+			
 		confidences = torch.cat(confidences, 1)
 		locations = torch.cat(locations, 1)
 
 		if self.is_test:
 			confidences = F.softmax(confidences, dim=2)
 			boxes = box_utils.convert_locations_to_boxes(
-			    locations, self.priors, self.config.center_variance, self.config.size_variance
+				locations, self.priors, self.config.center_variance, self.config.size_variance
 			)
 			boxes = box_utils.center_form_to_corner_form(boxes)
 			return confidences, boxes
@@ -238,22 +235,6 @@ class SSD(nn.Module):
 		self.BottleneckLSTM_1.hidden_state.detach_()
 		self.BottleneckLSTM_1.cell_state.detach_()
 		self.BottleneckLSTM_1.initialise_hidden_cell_state()
-
-		self.BottleneckLSTM_2.hidden_state.detach_()
-		self.BottleneckLSTM_2.cell_state.detach_()
-		self.BottleneckLSTM_2.initialise_hidden_cell_state()
-
-		self.BottleneckLSTM_3.hidden_state.detach_()
-		self.BottleneckLSTM_3.cell_state.detach_()
-		self.BottleneckLSTM_3.initialise_hidden_cell_state()
-
-		self.BottleneckLSTM_4.hidden_state.detach_()
-		self.BottleneckLSTM_4.cell_state.detach_()
-		self.BottleneckLSTM_4.initialise_hidden_cell_state()
-
-		self.BottleneckLSTM_5.hidden_state.detach_()
-		self.BottleneckLSTM_5.cell_state.detach_()
-		self.BottleneckLSTM_5.initialise_hidden_cell_state()
 
 	def init_from_pretrained_ssd(self, model):
 		state_dict = torch.load(
@@ -308,12 +289,9 @@ def _xavier_init_(m: nn.Module):
 		nn.init.xavier_uniform_(m.weight)
 
 
-
-if __name__=='__main__':
-	model = SSD(num_classes=21, config=config)
+if __name__ == '__main__':
+	model = MobileNetLSTM(num_classes=21, config=config)
 	i = torch.Tensor(1, 3, 150, 150)
-	confidences, locations= model(i)
+	confidences, locations = model(i)
 	print(confidences.shape)
 	print(locations.shape)
- 
-	
