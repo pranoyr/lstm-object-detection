@@ -17,7 +17,7 @@ class Predictor:
 
         self.sigma = sigma
        
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
         self.net.to(self.device)
         self.net.eval()

@@ -41,7 +41,7 @@ class BottleNeckLSTM(nn.Module):
                              KERNEL_SIZE, padding=PADDING)
         self.hidden_state = None
         self.cell_state = None
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
     def initialise_hidden_cell_state(self):
         self.cell_state = None
@@ -106,7 +106,7 @@ class ConvLSTMCell(nn.Module):
                                4 * hidden_size, KERNEL_SIZE, padding=PADDING)
         self.hidden_state = None
         self.cell_state = None
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
     def initialise_hidden_cell_state(self):
         self.cell_state = None

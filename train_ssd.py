@@ -105,7 +105,7 @@ parser.add_argument('--checkpoint_folder', default='models/',
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
 					format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 args = parser.parse_args()
-DEVICE = torch.device("cuda:0" if torch.cuda.is_available()
+DEVICE = torch.device("cuda:1" if torch.cuda.is_available()
 					  and args.use_cuda else "cpu")
 
 if args.use_cuda and torch.cuda.is_available():

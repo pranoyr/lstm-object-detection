@@ -149,7 +149,7 @@ class MobileNetLSTM(nn.Module):
 			self.device = device
 		else:
 			self.device = torch.device(
-				"cuda:0" if torch.cuda.is_available() else "cpu")
+				"cuda:1" if torch.cuda.is_available() else "cpu")
 		if is_test:
 			self.config = config
 			self.priors = config.priors.to(self.device)
