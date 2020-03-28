@@ -134,7 +134,6 @@ class ResNetLSTM(nn.Module):
 		header_index = 0
 
 		x = self.base_net(x)
-		print(x.shape)
 		confidence, location = self.compute_header(header_index, x)
 		header_index += 1
 		confidences.append(confidence)
@@ -142,7 +141,6 @@ class ResNetLSTM(nn.Module):
 
 		x = self.conv_final(x)
 		x, _ = self.lstm_layers[0](x)
-		print(x.shape)
 		confidence, location = self.compute_header(header_index, x)
 		header_index += 1
 		confidences.append(confidence)
@@ -153,7 +151,6 @@ class ResNetLSTM(nn.Module):
 		for i in range(len(self.extras)):
 			if (i < len(self.lstm_layers)-1): 
 				x = self.extras[i](x)
-				print(x.shape)
 				x, _ = self.lstm_layers[i+1](x)
 				confidence, location = self.compute_header(header_index, x)
 				header_index += 1
