@@ -3,8 +3,6 @@ import torch
 import numpy as np
 from typing import List, Tuple
 import torch.nn.functional as F
-from resnet import resnet101
-
 from ..utils import box_utils
 # import box_utils
 from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
