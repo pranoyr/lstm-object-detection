@@ -9,6 +9,7 @@ KERNEL_SIZE = 3
 PADDING = KERNEL_SIZE // 2
 
 
+
 def conv_dw(inp, oup, kernel_size, padding, stride=1):
     return nn.Sequential(
         nn.Conv2d(inp, inp, kernel_size, stride,
@@ -40,7 +41,7 @@ class BottleNeckLSTM(nn.Module):
                              KERNEL_SIZE, padding=PADDING)
         self.hidden_state = None
         self.cell_state = None
-        self.device = torch.device("cuda")
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     def initialise_hidden_cell_state(self):
         self.cell_state = None
@@ -105,7 +106,7 @@ class ConvLSTMCell(nn.Module):
                                4 * hidden_size, KERNEL_SIZE, padding=PADDING)
         self.hidden_state = None
         self.cell_state = None
-        self.device = torch.device("cuda")
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     def initialise_hidden_cell_state(self):
         self.cell_state = None
