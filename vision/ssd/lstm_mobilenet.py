@@ -224,9 +224,9 @@ class MobileNetLSTM(nn.Module):
 		self.regression_headers.apply(_xavier_init_)
 
 	def detach_all(self):
-		self.BottleneckLSTM_1.hidden_state.detach_()
-		self.BottleneckLSTM_1.cell_state.detach_()
-		self.BottleneckLSTM_1.initialise_hidden_cell_state()
+		for layer in self.lstm_layers:
+			layer.hidden_state.detach_()
+			layer.cell_state.detach_()
 
 	def init_from_pretrained_ssd(self, model):
 		state_dict = torch.load(
