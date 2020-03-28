@@ -185,21 +185,21 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 		running_loss += tot_loss.item()
 		running_regression_loss += reg_loss.item()
 		running_classification_loss += cls_loss.item()
-		if i and i % debug_steps == 0:
-			avg_loss = running_loss / debug_steps
-			avg_reg_loss = running_regression_loss / debug_steps
-			avg_clf_loss = running_classification_loss / debug_steps
-			logging.info(
-				f"Epoch: {epoch}, Step: {i}, " +
-				f"Average Loss: {avg_loss:.4f}, " +
-				f"Average Regression Loss {avg_reg_loss:.4f}, " +
-				f"Average Classification Loss: {avg_clf_loss:.4f}"
-			)
-			running_loss = 0.0
-			running_regression_loss = 0.0
-			running_classification_loss = 0.0
+		# if i and i % debug_steps == 0:
+		avg_loss = running_loss / debug_steps
+		avg_reg_loss = running_regression_loss / debug_steps
+		avg_clf_loss = running_classification_loss / debug_steps
+		logging.info(
+			f"Epoch: {epoch}, Step: {i}, " +
+			f"Average Loss: {avg_loss:.4f}, " +
+			f"Average Regression Loss {avg_reg_loss:.4f}, " +
+			f"Average Classification Loss: {avg_clf_loss:.4f}"
+		)
+		running_loss = 0.0
+		running_regression_loss = 0.0
+		running_classification_loss = 0.0
 
-		net.detach_all()
+	net.detach_all()
 	# net.detach_all()
 
 
