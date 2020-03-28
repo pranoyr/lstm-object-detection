@@ -73,7 +73,7 @@ class MobileNetV1(nn.Module):
 
 
 class MobileNetLSTM(nn.Module):
-	def __init__(self, num_classes, is_test=False, config=None, device=None, num_lstm=1):
+	def __init__(self, num_classes, is_test=False, config=None, device=None, num_lstm=3):
 		"""Compose a SSD model using the given components.
 		"""
 		super(MobileNetLSTM, self).__init__()
@@ -175,27 +175,19 @@ class MobileNetLSTM(nn.Module):
 		locations.append(location)
 
 		for i in range(len(self.extras)):
-			print(header_index)
-			x = self.extras[i](x)
-			confidence, location = self.compute_header(header_index, x)
-			header_index += 1
-			confidences.append(confidence)
-			locations.append(location)
-			# print("****")
-			# print(len(self.lstm_layers)-1)
-			# if (i < len(self.lstm_layers)-1):
-			# 	x = self.extras[i](x)
-			# 	x, _ = self.lstm_layers[i+1](x)
-			# 	confidence, location = self.compute_header(header_index, x)
-			# 	header_index += 1
-			# 	confidences.append(confidence)
-			# 	locations.append(location)
-			# else:
-			# 	x = self.extras[i](x)
-			# 	confidence, location = self.compute_header(header_index, x)
-			# 	header_index += 1
-			# 	confidences.append(confidence)
-			# 	locations.append(location)
+			if (i < len(self.lstm_layers)-1): 
+				x = self.extras[i](x)
+				x, _ = self.lstm_layers[i+1](x)
+				confidence, location = self.compute_header(header_index, x)
+				header_index += 1
+				confidences.append(confidence)
+				locations.append(location)
+			else:
+				x = self.extras[i](x)
+				confidence, location = self.compute_header(header_index, x)
+				header_index += 1
+				confidences.append(confidence)
+				locations.append(location)
 				
 			
 		confidences = torch.cat(confidences, 1)
