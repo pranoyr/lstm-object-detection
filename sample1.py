@@ -14,4 +14,3 @@ output = torch.relu(output)
 print(output.shape)
 
 
-

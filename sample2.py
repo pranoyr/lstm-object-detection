@@ -49,7 +49,7 @@ parser.add_argument('--mb2_width_mult', default=1.0, type=float,
                     help='Width Multiplifier for MobilenetV2')
 
 # Params for SGD
-parser.add_argument('--lr', '--learning-rate', default=0.003, type=float,
+parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float,
                     help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float,
                     help='Momentum value for optim')
@@ -87,7 +87,7 @@ parser.add_argument('--batch_size', default=32, type=int,
                     help='Batch size for training')
 parser.add_argument('--num_epochs', default=120, type=int,
                     help='the number epochs')
-parser.add_argument('--num_workers', default=0, type=int,
+parser.add_argument('--num_workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--validation_epochs', default=5, type=int,
                     help='the number epochs')
@@ -120,6 +120,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
     running_regression_loss = 0.0
     running_classification_loss = 0.0
     for i, data in enumerate(loader):
+
         # batch , timesteps, channel, height, width
         #videos = torch.Tensor(2,2,3,300,300)
         videos, videos_boxes, videos_labels = data
@@ -140,11 +141,8 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
         videos_boxes = videos_boxes.permute(1, 0, 2, 3)
         videos_labels = videos_labels.permute(1, 0, 2)
 
-        tot_loss = 0
-        reg_loss = 0
-        cls_loss = 0
         for j in range(videos.size(0)):
-            video = videos[j]  # get image batch for each time step
+            video = videos[j, :, :, :, :]  # get image batch for each time step
             # out_dec_final_batch = out_dec_final[j,:,:,:,:] # get image batch for each time step
 
             #images = [out_dec_23_batch , out_dec_final_batch]
@@ -156,27 +154,19 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
                 confidence, locations, videos_labels[j], videos_boxes[j])  # TODO CHANGE BOXES
             loss = regression_loss + classification_loss
 
-            # optimizer.zero_grad()
-            # loss.backward(retain_graph=True)
-            # optimizer.step()
-
-            tot_loss += loss
-            reg_loss += regression_loss
-            cls_loss += classification_loss
+            optimizer.zero_grad()
+            loss.backward(retain_graph=True)
+            optimizer.step()
 
             # calculating loss for all timesteps
-            # running_loss += loss.item()
-            # running_regression_loss += regression_loss.item()
-            # running_classification_loss += classification_loss.item()
-
-        optimizer.zero_grad()
-        tot_loss.backward()
-        optimizer.step()
+            running_loss += loss.item()
+            running_regression_loss += regression_loss.item()
+            running_classification_loss += classification_loss.item()
 
         # net.zero_grad()
-        running_loss += tot_loss.item()
-        running_regression_loss += reg_loss.item()
-        running_classification_loss += cls_loss.item()
+        # running_loss += total_loss.item()
+        # running_regression_loss += total_regression_loss.item()
+        # running_classification_loss += total_classification_loss.item()
         if i and i % debug_steps == 0:
             avg_loss = running_loss / debug_steps
             avg_reg_loss = running_regression_loss / debug_steps
@@ -192,7 +182,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
             running_classification_loss = 0.0
 
         net.detach_all()
-    # net.detach_all()
+    net.detach_all()
 
 
 def test(loader, net, criterion, device):
@@ -365,12 +355,11 @@ if __name__ == '__main__':
         f'Took {timer.end("Load Model"):.2f} seconds to load the model.')
 
     net.to(DEVICE)
-    # print(net.parameters)
+    print(net.parameters)
 
-    criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=10,
+    criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=3,
                              center_variance=0.1, size_variance=0.2, device=DEVICE)
-    optimizer = torch.optim.RMSprop(
-        params, lr=args.lr, weight_decay=args.weight_decay, momentum=args.momentum)
+    optimizer = torch.optim.RMSprop(params, lr=0.003,weight_decay=args.weight_decay, momentum=args.momentum)
     logging.info(f"Learning rate: {args.lr}, Base net learning rate: {base_net_lr}, "
                  + f"Extra Layers learning rate: {extra_layers_lr}.")
 
@@ -393,9 +382,9 @@ if __name__ == '__main__':
         train(train_loader, net, criterion, optimizer,
               device=DEVICE, debug_steps=args.debug_steps, epoch=epoch)
 
-        # scheduler.step()
+        scheduler.step()
 
-        if epoch % 2 == 0:
+        if epoch % 10 == 0:
             # val_loss, val_regression_loss, val_classification_loss = test(val_loader, net, criterion, DEVICE)
             # logging.info(
             #     f"Epoch: {epoch}, " +
