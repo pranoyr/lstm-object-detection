@@ -160,14 +160,14 @@ class MobileNetLSTM(nn.Module):
 		header_index = 0
 
 		# 12 conv features
-		x = self.conv_final(x)
+		x = self.base_net(x)
 		confidence, location = self.compute_header(header_index, x)
 		header_index += 1
 		confidences.append(confidence)
 		locations.append(location)
 
 
-		x = self.conv_13(x)
+		x = self.conv_final(x)
 		x, _ = self.lstm_layers[0](x)
 		confidence, location = self.compute_header(header_index, x)
 		header_index += 1
@@ -283,7 +283,7 @@ def _xavier_init_(m: nn.Module):
 
 if __name__ == '__main__':
 	model = MobileNetLSTM(num_classes=21, config=config)
-	i = torch.Tensor(1, 3, 150, 150)
+	i = torch.Tensor(1, 3, 300, 300)
 	confidences, locations = model(i)
 	print(confidences.shape)
 	print(locations.shape)

@@ -3,13 +3,12 @@ import torch
 import numpy as np
 from typing import List, Tuple
 import torch.nn.functional as F
-from ..utils import box_utils
-# import box_utils
+# from ..utils import box_utils
+import box_utils
 from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
-from .conv_lstm import ConvLSTMCell
-from .conv_lstm import BottleNeckLSTM
-# import mobilenetv1_ssd_config as config
-# from resnet import resnet101
+from conv_lstm import ConvLSTMCell
+from conv_lstm import BottleNeckLSTM
+import mobilenetv1_ssd_config as config
 from torchvision.models import resnet101
 
 # borrowed from "https://github.com/marvis/pytorch-mobilenet"
@@ -39,7 +38,7 @@ def conv_dw_1(inp, oup, kernel_size=3, padding=0, stride=1):
 
 
 class ResNetLSTM(nn.Module):
-	def __init__(self, num_classes, is_test=False, config=None, device=None, num_lstm=3):
+	def __init__(self, num_classes, is_test=False, config=None, device=None, num_lstm=5):
 		"""Compose a SSD model using the given components.
 		"""
 		super(ResNetLSTM, self).__init__()
@@ -102,21 +101,21 @@ class ResNetLSTM(nn.Module):
 
 
 		self.regression_headers = ModuleList([
-			conv_dw_1(inp=512, oup=6 * 4, kernel_size=3, padding=1),
+			conv_dw_1(inp=512, oup=4 * 4, kernel_size=3, padding=1),
 			conv_dw_1(inp=256, oup=6 * 4, kernel_size=3, padding=1),
 			conv_dw_1(inp=64, oup=6 * 4, kernel_size=3, padding=1),
 			conv_dw_1(inp=16, oup=6 * 4, kernel_size=3, padding=1),
-			conv_dw_1(inp=16, oup=6 * 4, kernel_size=3, padding=1),
-			conv_dw_1(inp=16, oup=6 * 4, kernel_size=3, padding=1),
+			conv_dw_1(inp=16, oup=4 * 4, kernel_size=3, padding=1),
+			conv_dw_1(inp=16, oup=4 * 4, kernel_size=3, padding=1, stride=2),
 		])
 
 		self.classification_headers = ModuleList([
-			conv_dw_1(inp=512, oup=6 * num_classes, kernel_size=3, padding=1),
+			conv_dw_1(inp=512, oup=4 * num_classes, kernel_size=3, padding=1),
 			conv_dw_1(inp=256, oup=6 * num_classes, kernel_size=3, padding=1),
 			conv_dw_1(inp=64, oup=6 * num_classes, kernel_size=3, padding=1),
 			conv_dw_1(inp=16, oup=6 * num_classes, kernel_size=3, padding=1),
-			conv_dw_1(inp=16, oup=6 * num_classes, kernel_size=3, padding=1),
-			conv_dw_1(inp=16, oup=6 * num_classes, kernel_size=3, padding=1),
+			conv_dw_1(inp=16, oup=4 * num_classes, kernel_size=3, padding=1),
+			conv_dw_1(inp=16, oup=4 * num_classes, kernel_size=3, padding=1, stride = 2),
 		])
 
 
@@ -135,22 +134,26 @@ class ResNetLSTM(nn.Module):
 		header_index = 0
 
 		x = self.base_net(x)
+		print(x.shape)
 		confidence, location = self.compute_header(header_index, x)
 		header_index += 1
 		confidences.append(confidence)
 		locations.append(location)
-
 
 		x = self.conv_final(x)
 		x, _ = self.lstm_layers[0](x)
+		print(x.shape)
 		confidence, location = self.compute_header(header_index, x)
 		header_index += 1
 		confidences.append(confidence)
 		locations.append(location)
+
+		
 
 		for i in range(len(self.extras)):
 			if (i < len(self.lstm_layers)-1): 
 				x = self.extras[i](x)
+				print(x.shape)
 				x, _ = self.lstm_layers[i+1](x)
 				confidence, location = self.compute_header(header_index, x)
 				header_index += 1
