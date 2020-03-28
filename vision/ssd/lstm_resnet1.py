@@ -45,7 +45,7 @@ class ResNetLSTM1(nn.Module):
 	def __init__(self, num_classes, is_test=False, config=None, device=None, num_lstm=5):
 		"""Compose a SSD model using the given components.
 		"""
-		super(ResNetLSTM, self).__init__()
+		super(ResNetLSTM1, self).__init__()
 
 		# alpha = 1
 		# alpha_base = alpha
