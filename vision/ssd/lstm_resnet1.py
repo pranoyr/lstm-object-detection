@@ -9,6 +9,7 @@ from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
 from .conv_lstm import ConvLSTMCell
 from .conv_lstm import BottleNeckLSTM
 from torchvision.models import resnet101
+from args import parser
 
 # import box_utils
 # from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
@@ -17,6 +18,7 @@ from torchvision.models import resnet101
 # import mobilenetv1_ssd_config as config
 # from torchvision.models import resnet101
 
+args = parser.parse_args()
 
 def conv_dw(inp, oup, stride):
 	return nn.Sequential(
@@ -42,7 +44,7 @@ def conv_depthwise_seperable(in_channels, out_channels, kernel_size=3, padding=0
 
 
 class ResNetLSTM1(nn.Module):
-	def __init__(self, num_classes, is_test=False, config=None, device=None, num_lstm=5):
+	def __init__(self, num_classes, is_test=False, config=None, num_lstm=5):
 		"""Compose a SSD model using the given components.
 		"""
 		super(ResNetLSTM1, self).__init__()
@@ -125,11 +127,8 @@ class ResNetLSTM1(nn.Module):
 		conv_depthwise_seperable(in_channels=16, out_channels=4 * num_classes, kernel_size=3, padding=1), # TODO: change to kernel_size=1, padding=0?
 		])
 
-		if device:
-			self.device = device
-		else:
-			self.device = torch.device(
-				"cuda:1" if torch.cuda.is_available() else "cpu")
+		
+		self.device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 		if is_test:
 			self.config = config
 			self.priors = config.priors.to(self.device)

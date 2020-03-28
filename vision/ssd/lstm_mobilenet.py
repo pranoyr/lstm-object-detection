@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from typing import List, Tuple
 import torch.nn.functional as F
-
+from args import parser
 
 from ..utils import box_utils
 # import box_utils
@@ -13,6 +13,8 @@ from .conv_lstm import BottleNeckLSTM
 # import mobilenetv1_ssd_config as config
 
 # borrowed from "https://github.com/marvis/pytorch-mobilenet"
+
+args = parser.parse_args()
 
 
 def conv_dw(inp, oup, stride):
@@ -145,11 +147,7 @@ class MobileNetLSTM(nn.Module):
 
 		self.conv_final = conv_dw(512, 1024, 2)
 
-		if device:
-			self.device = device
-		else:
-			self.device = torch.device(
-				"cuda:1" if torch.cuda.is_available() else "cpu")
+		self.device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 		if is_test:
 			self.config = config
 			self.priors = config.priors.to(self.device)

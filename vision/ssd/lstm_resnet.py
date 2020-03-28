@@ -10,6 +10,7 @@ from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
 from .conv_lstm import ConvLSTMCell
 from .conv_lstm import BottleNeckLSTM
 from torchvision.models import resnet101
+from args import parser
 
 
 # import box_utils
@@ -22,6 +23,8 @@ from torchvision.models import resnet101
 
 
 # borrowed from "https://github.com/marvis/pytorch-mobilenet"
+
+args = parser.parse_args()
 
 
 def conv_dw(inp, oup, stride):
@@ -129,11 +132,7 @@ class ResNetLSTM(nn.Module):
 		])
 
 
-		if device:
-			self.device = device
-		else:
-			self.device = torch.device(
-				"cuda:1" if torch.cuda.is_available() else "cpu")
+		self.device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 		if is_test:
 			self.config = config
 			self.priors = config.priors.to(self.device)
