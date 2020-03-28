@@ -63,9 +63,10 @@ class BottleNeckLSTM(nn.Module):
                 torch.zeros(state_size),
                 torch.zeros(state_size)
             )
+            self.hidden_state = self.hidden_state.to(self.device)
+            self.cell_state = self.cell_state.to(self.device)
 
         # data size is [batch, channel, height, width]
-        self.hidden_state = self.hidden_state.to(self.device)
         stacked_inputs = torch.cat((input_, self.hidden_state), 1)
 
         stacked_inputs = self.bottleneck_gate(stacked_inputs)
@@ -84,8 +85,7 @@ class BottleNeckLSTM(nn.Module):
         cell_gate = f.tanh(cell_gate)
 
         # compute current cell and hidden state
-        cell = (remember_gate.to(self.device) * self.cell_state.to(self.device)
-                ) + (in_gate.to(self.device) * cell_gate.to(self.device))
+        cell = (remember_gate * prev_cell) + (in_gate * cell_gate)
         hidden = out_gate * f.tanh(cell)
 
         # self.prev_state = (hidden, cell)
@@ -128,6 +128,8 @@ class ConvLSTMCell(nn.Module):
                 torch.zeros(state_size),
                 torch.zeros(state_size)
             )
+            self.hidden_state = self.hidden_state.to(self.device)
+            self.cell_state = self.cell_state.to(self.device)
 
         # data size is [batch, channel, height, width]
         self.hidden_state = self.hidden_state.to(self.device)
@@ -147,8 +149,7 @@ class ConvLSTMCell(nn.Module):
         cell_gate = f.tanh(cell_gate)
 
         # compute current cell and hidden state
-        cell = (remember_gate.to(self.device) * self.cell_state.to(self.device)
-                ) + (in_gate.to(self.device) * cell_gate.to(self.device))
+        cell = (remember_gate * prev_cell) + (in_gate * cell_gate)
         hidden = out_gate * f.tanh(cell)
 
         # self.prev_state = (hidden, cell)
