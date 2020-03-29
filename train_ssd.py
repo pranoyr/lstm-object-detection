@@ -357,14 +357,12 @@ if __name__ == '__main__':
 	else:
 		params = [
 			{'params': net.base_net.parameters(), 'lr': base_net_lr},
-			{'params': itertools.chain(
-				net.extras.parameters()
-			), 'lr': extra_layers_lr},
+			{'params': net.extras.parameters(), 'lr': extra_layers_lr},
 			{'params': itertools.chain(
 				net.regression_headers.parameters(),
 				net.classification_headers.parameters()
 			)},
-			{'params': itertools.chain(net.lstm_layers.parameters())},
+			{'params': net.lstm_layers.parameters()},
 			{'params': net.conv_final.parameters()}
 
 		]
