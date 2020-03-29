@@ -4,19 +4,19 @@ import numpy as np
 from typing import List, Tuple
 import torch.nn.functional as F
 
-from ..utils import box_utils
-from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
-from .conv_lstm import ConvLSTMCell
-from .conv_lstm import BottleNeckLSTM
-from torchvision.models import resnet101
-from args import parser
-
-# import box_utils
+# from ..utils import box_utils
 # from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
-# from conv_lstm import ConvLSTMCell
-# from conv_lstm import BottleNeckLSTM
-# import mobilenetv1_ssd_config as config
+# from .conv_lstm import ConvLSTMCell
+# from .conv_lstm import BottleNeckLSTM
 # from torchvision.models import resnet101
+# from args import parser
+
+import box_utils
+from torch.nn import Conv2d, Sequential, ModuleList, ReLU, BatchNorm2d
+from conv_lstm import ConvLSTMCell
+from conv_lstm import BottleNeckLSTM
+import mobilenetv1_ssd_config as config
+from torchvision.models import resnet101
 
 args = parser.parse_args()
 
@@ -249,7 +249,7 @@ def _xavier_init_(m: nn.Module):
 
 
 if __name__ == '__main__':
-	model = ResNetLSTM1(num_classes=21, config=config)
+	model = ResNetLSTM3(num_classes=21, config=config)
 	i = torch.Tensor(1, 3, 300, 300)
 	confidences, locations = model(i)
 	print(confidences.shape)
