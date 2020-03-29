@@ -20,6 +20,8 @@ from vision.ssd.lstm_mobilenet import MobileNetLSTM
 from vision.ssd.lstm_resnet import ResNetLSTM
 from vision.ssd.lstm_resnet1 import ResNetLSTM1
 from vision.ssd.lstm_resnet2 import ResNetLSTM2
+from vision.ssd.lstm_resnet2 import ResNetLSTM3
+
 from vision.datasets.voc_dataset_video import VOCDataset
 from vision.datasets.vid_dataset import VIDDataset
 from vision.datasets.open_images import OpenImagesDataset
@@ -262,6 +264,9 @@ if __name__ == '__main__':
 		config = vgg_ssd_config
 	elif args.net == 'lstm-resnet2':
 		create_net = ResNetLSTM2
+		config = vgg_ssd_config
+	elif args.net == 'lstm-resnet3':
+		create_net = ResNetLSTM3
 		config = vgg_ssd_config
 	else:
 		logging.fatal("The net type is wrong.")
