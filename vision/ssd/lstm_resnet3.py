@@ -63,9 +63,9 @@ class ResNetLSTM3(nn.Module):
 		# 			   ConvLSTMCell(16, 16),
 		# 			   ConvLSTMCell(16, 16)]
 		
-		lstm_layers = [BottleNeckLSTM(1024, 1024),
-					   BottleNeckLSTM(512, 512),
-					   BottleNeckLSTM(256, 256),
+		lstm_layers = [ConvLSTMCell(1024, 1024),
+					   ConvLSTMCell(512, 512),
+					   ConvLSTMCell(256, 256),
 					   ConvLSTMCell(256, 256),
 					   ConvLSTMCell(256, 256)]
 
