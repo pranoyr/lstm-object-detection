@@ -20,7 +20,7 @@ from vision.ssd.lstm_mobilenet import MobileNetLSTM
 from vision.ssd.lstm_resnet import ResNetLSTM
 from vision.ssd.lstm_resnet1 import ResNetLSTM1
 from vision.ssd.lstm_resnet2 import ResNetLSTM2
-from vision.ssd.lstm_resnet2 import ResNetLSTM3
+from vision.ssd.lstm_resnet3 import ResNetLSTM3
 
 from vision.datasets.voc_dataset_video import VOCDataset
 from vision.datasets.vid_dataset import VIDDataset
