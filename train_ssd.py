@@ -355,17 +355,18 @@ if __name__ == '__main__':
 			net.regression_headers.parameters(), net.classification_headers.parameters())
 		logging.info("Freeze all the layers except prediction heads.")
 	else:
-		params = [
-			{'params': net.base_net.parameters(), 'lr': base_net_lr},
-			{'params': net.extras.parameters(), 'lr': extra_layers_lr},
-			{'params': itertools.chain(
-				net.regression_headers.parameters(),
-				net.classification_headers.parameters()
-			)},
-			{'params': net.lstm_layers.parameters()},
-			{'params': net.conv_final.parameters()}
+		# params = [
+		# 	{'params': net.base_net.parameters(), 'lr': base_net_lr},
+		# 	{'params': net.extras.parameters(), 'lr': extra_layers_lr},
+		# 	{'params': itertools.chain(
+		# 		net.regression_headers.parameters(),
+		# 		net.classification_headers.parameters()
+		# 	)},
+		# 	{'params': net.lstm_layers.parameters()},
+		# 	{'params': net.conv_final.parameters()}
 
-		]
+		# ]
+		params = net.parameters()
 
 	timer.start("Load Model")
 	if args.resume:
