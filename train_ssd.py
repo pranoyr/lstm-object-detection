@@ -261,7 +261,7 @@ if __name__ == '__main__':
 		create_net = ResNetLSTM1
 		config = vgg_ssd_config
 	elif args.net == 'lstm-resnet2':
-    	create_net = ResNetLSTM2
+		create_net = ResNetLSTM2
 		config = vgg_ssd_config
 	else:
 		logging.fatal("The net type is wrong.")
