@@ -5,9 +5,9 @@
 # from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite, create_mobilenetv2_ssd_lite_predictor
 # from vision.ssd.resnet50_ssd1 import create_resnet18_ssd, create_resnet18_ssd_predictor
 from vision.ssd.predictor import Predictor
-from vision.ssd.lstm_resnet1 import ResNetLSTM1
+from vision.ssd.lstm_mobilenet import MobileNetLSTM
 from vision.utils.misc import Timer
-from vision.ssd.config import vgg_ssd_config as config
+from vision.ssd.config import mobilenetv1_ssd_config as config
 import cv2
 import sys
 import  os
@@ -35,10 +35,10 @@ class_names = [name.strip() for name in open("./models/voc-model-labels.txt").re
 # elif net_type == 'resnet-18':
 #     net = create_resnet18_ssd(len(class_names), is_test=True)
 
-net = ResNetLSTM1(num_classes=31, is_test=True, config=config)
+net = MobileNetLSTM(num_classes=31, is_test=True, config=config)
 
 
-model_path = "/Users/pranoyr/Desktop/lstm-resnet1-Epoch-8.pth"
+model_path = "/Users/pranoyr/Desktop/lstm-mobilenet-Epoch-60.pth"
 net.load(model_path)
 
 # if net_type == 'vgg16-ssd':
@@ -62,7 +62,7 @@ predictor = Predictor(net, config.image_size, config.image_mean,
                           sigma=None)
 
 
-dir_path = './data/sample'
+dir_path = './data/sample/'
 imgs = []
 for img_name in os.listdir(dir_path):
     img_path = os.path.join(dir_path, img_name)
@@ -75,7 +75,7 @@ for img_name in os.listdir(dir_path):
 video = np.array(imgs)
 
 for image in video:
-    boxes, labels, probs = predictor.predict(image, 10, 0.6)
+    boxes, labels, probs = predictor.predict(image, 10, 0.2)
 
 print(boxes.shape)
 

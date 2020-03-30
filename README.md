@@ -7,6 +7,6 @@
 
 ## Train
 ```
-python train_ssd.py --datasets ./data --validation_dataset ./data/ --net vgg16-ssd --batch_size 2 --num_epochs 200 --scheduler cosine --lr 0.01 --t_max 200
+python train_ssd.py --datasets /home/neuroplex/data/ILSVRC/ --validation_dataset ./data/ --net lstm-mobilenet --batch_size 1 --num_epochs 200 --gpu 1
 ```
 
