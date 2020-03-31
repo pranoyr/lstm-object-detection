@@ -90,14 +90,14 @@ class MobileNetLSTM(nn.Module):
 		self.is_test = is_test
 		self.config = config
 
-		lstm_layers = [BottleNeckLSTM(1024, 256),
-					   BottleNeckLSTM(256, 64),
-					   BottleNeckLSTM(64, 16),
-					   ConvLSTMCell(16, 16),
-					   ConvLSTMCell(16, 16)]
+		# lstm_layers = [BottleNeckLSTM(1024, 256),
+		# 			   BottleNeckLSTM(256, 64),
+		# 			   BottleNeckLSTM(64, 16),
+		# 			   ConvLSTMCell(16, 16),
+		# 			   ConvLSTMCell(16, 16)]
 		
 	
-		self.lstm_layers =  nn.ModuleList([lstm_layers[i] for i in range(num_lstm)])
+		# self.lstm_layers =  nn.ModuleList([lstm_layers[i] for i in range(num_lstm)])
 
 		self.extras = ModuleList([
 			Sequential(
@@ -162,7 +162,7 @@ class MobileNetLSTM(nn.Module):
 
 
 		x = self.conv_final(x)
-		x, _ = self.lstm_layers[0](x)
+		# x, _ = self.lstm_layers[0](x)
 		confidence, location = self.compute_header(header_index, x)
 		header_index += 1
 		confidences.append(confidence)
@@ -171,7 +171,7 @@ class MobileNetLSTM(nn.Module):
 		for i in range(len(self.extras)):
 			if (i < len(self.lstm_layers)-1): 
 				x = self.extras[i](x)
-				x, _ = self.lstm_layers[i+1](x)
+				# x, _ = self.lstm_layers[i+1](x)
 				confidence, location = self.compute_header(header_index, x)
 				header_index += 1
 				confidences.append(confidence)
