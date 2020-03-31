@@ -225,6 +225,7 @@ class MobileNetLSTM(nn.Module):
 		for layer in self.lstm_layers:
 			layer.hidden_state.detach_()
 			layer.cell_state.detach_()
+			layer.initialise_hidden_cell_state()
 
 	def init_from_pretrained_ssd(self, model):
 		state_dict = torch.load(

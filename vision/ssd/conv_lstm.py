@@ -17,11 +17,9 @@ def conv_dw(inp, oup, kernel_size, padding, stride=1):
     return nn.Sequential(
         nn.Conv2d(inp, inp, kernel_size, stride,
                   padding, groups=inp, bias=False),
-        nn.BatchNorm2d(inp),
         nn.ReLU(inplace=True),
 
         nn.Conv2d(inp, oup, 1, 1, 0, bias=False),
-        nn.BatchNorm2d(oup),
         nn.ReLU(inplace=True),
     )
 
@@ -38,8 +36,7 @@ class BottleNeckLSTM(nn.Module):
         self.hidden_size = hidden_size
         self.bottleneck_gate = nn.Sequential(
             conv_dw(input_size + hidden_size, hidden_size,
-                    KERNEL_SIZE, padding=PADDING),
-            nn.ReLU())
+                    KERNEL_SIZE, padding=PADDING))
         self.Gates = conv_dw(hidden_size, 4 * hidden_size,
                              KERNEL_SIZE, padding=PADDING)
         self.hidden_state = None
