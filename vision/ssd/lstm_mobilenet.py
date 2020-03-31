@@ -169,21 +169,21 @@ class MobileNetLSTM(nn.Module):
 		locations.append(location)
 
 		for i in range(len(self.extras)):
-			if (i < len(self.lstm_layers)-1): 
-				x = self.extras[i](x)
-				# x, _ = self.lstm_layers[i+1](x)
-				confidence, location = self.compute_header(header_index, x)
-				header_index += 1
-				confidences.append(confidence)
-				locations.append(location)
-			else:
-				x = self.extras[i](x)
-				confidence, location = self.compute_header(header_index, x)
-				header_index += 1
-				confidences.append(confidence)
-				locations.append(location)
-				
+			# if (i < len(self.lstm_layers)-1): 
+			# 	x = self.extras[i](x)
+			# 	# x, _ = self.lstm_layers[i+1](x)
+			# 	confidence, location = self.compute_header(header_index, x)
+			# 	header_index += 1
+			# 	confidences.append(confidence)
+			# 	locations.append(location)
+			# else:
+			x = self.extras[i](x)
+			confidence, location = self.compute_header(header_index, x)
+			header_index += 1
+			confidences.append(confidence)
+			locations.append(location)
 			
+		
 		confidences = torch.cat(confidences, 1)
 		locations = torch.cat(locations, 1)
 
