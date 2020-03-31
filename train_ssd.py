@@ -107,7 +107,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
             avg_loss = running_loss / debug_steps
             avg_reg_loss = running_regression_loss / debug_steps
             avg_clf_loss = running_classification_loss / debug_steps
-            print.info(
+            print(
                 f"Epoch: {epoch}, Step: {i}, " +
                 f"Average Loss: {avg_loss:.4f}, " +
                 f"Average Regression Loss {avg_reg_loss:.4f}, " +
