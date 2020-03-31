@@ -35,7 +35,7 @@ class BottleNeckLSTM(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.bottleneck_gate = nn.Sequential(
-            conv_dw(input_size + hidden_size, hidden_size,
+            nn.Conv2d(input_size + hidden_size, hidden_size,
                     KERNEL_SIZE, padding=PADDING))
         self.Gates = conv_dw(hidden_size, 4 * hidden_size,
                              KERNEL_SIZE, padding=PADDING)
