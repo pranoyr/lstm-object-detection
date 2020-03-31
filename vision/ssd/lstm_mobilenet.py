@@ -90,9 +90,9 @@ class MobileNetLSTM(nn.Module):
 		self.is_test = is_test
 		self.config = config
 
-		lstm_layers = [BottleNeckLSTM(1024, 256),
-					   BottleNeckLSTM(256, 64),
-					   BottleNeckLSTM(64, 16),
+		lstm_layers = [ConvLSTMCell(1024, 256),
+					   ConvLSTMCell(256, 64),
+					   ConvLSTMCell(64, 16),
 					   ConvLSTMCell(16, 16),
 					   ConvLSTMCell(16, 16)]
 		
