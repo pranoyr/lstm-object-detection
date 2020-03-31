@@ -38,13 +38,13 @@ args = parser.parse_args()
 
 DEVICE = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 
-# if torch.cuda.is_available():
-# 	seed = 0
-# 	random.seed(seed)
-# 	np.random.seed(seed)
-# 	torch.manual_seed(seed)
-# 	torch.backends.cudnn.deterministic = True
-# 	torch.backends.cudnn.benchmark = False
+if torch.cuda.is_available():
+	seed = 0
+	random.seed(seed)
+	np.random.seed(seed)
+	torch.manual_seed(seed)
+	torch.backends.cudnn.deterministic = True
+	torch.backends.cudnn.benchmark = False
 
 
 # def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
