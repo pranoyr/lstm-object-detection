@@ -201,7 +201,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=2, epoch=-1):
 			running_regression_loss = 0.0
 			running_classification_loss = 0.0
 
-		net.detach_all()
+		# net.detach_all()
 	# net.detach_all()
 
 
