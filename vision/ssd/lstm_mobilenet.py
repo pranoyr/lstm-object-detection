@@ -75,7 +75,7 @@ class MobileNetV1(nn.Module):
 
 
 class MobileNetLSTM(nn.Module):
-	def __init__(self, num_classes, is_test=False, config=None, device=None, num_lstm=3):
+	def __init__(self, num_classes, is_test=False, config=None, device=None, num_lstm=5):
 		"""Compose a SSD model using the given components.
 		"""
 		super(MobileNetLSTM, self).__init__()
