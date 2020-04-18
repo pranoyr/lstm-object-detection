@@ -101,18 +101,18 @@ class MobileNetLSTM(nn.Module):
 
 		self.extras = ModuleList([
 			Sequential(
-				Conv2d(in_channels=1024, out_channels=128, kernel_size=1),
+				Conv2d(in_channels=256, out_channels=128, kernel_size=1),
 				ReLU(),
 				conv_dw_1(inp=128, oup=256, kernel_size=3,
 						  stride=2, padding=1),
 			),
 			Sequential(
-				Conv2d(in_channels=256, out_channels=32, kernel_size=1),
+				Conv2d(in_channels=64, out_channels=32, kernel_size=1),
 				ReLU(),
 				conv_dw_1(inp=32, oup=64, kernel_size=3, stride=2, padding=1),
 			),
 			Sequential(
-				Conv2d(in_channels=64, out_channels=8, kernel_size=1),
+				Conv2d(in_channels=16, out_channels=8, kernel_size=1),
 				ReLU(),
 				conv_dw_1(inp=8, oup=16, kernel_size=3, stride=2, padding=1),
 			),
