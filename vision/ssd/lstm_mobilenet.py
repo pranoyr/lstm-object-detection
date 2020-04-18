@@ -125,18 +125,18 @@ class MobileNetLSTM(nn.Module):
 
 		self.regression_headers = ModuleList([
 			conv_dw_1(inp=512, oup=6 * 4, kernel_size=3, padding=1),
-			conv_dw_1(inp=1024, oup=6 * 4, kernel_size=3, padding=1),
 			conv_dw_1(inp=256, oup=6 * 4, kernel_size=3, padding=1),
 			conv_dw_1(inp=64, oup=6 * 4, kernel_size=3, padding=1),
+			conv_dw_1(inp=16, oup=6 * 4, kernel_size=3, padding=1),
 			conv_dw_1(inp=16, oup=6 * 4, kernel_size=3, padding=1),
 			conv_dw_1(inp=16, oup=6 * 4, kernel_size=3, padding=1),
 		])
 
 		self.classification_headers = ModuleList([
 			conv_dw_1(inp=512, oup=6 * num_classes, kernel_size=3, padding=1),
-			conv_dw_1(inp=1024, oup=6 * num_classes, kernel_size=3, padding=1),
 			conv_dw_1(inp=256, oup=6 * num_classes, kernel_size=3, padding=1),
 			conv_dw_1(inp=64, oup=6 * num_classes, kernel_size=3, padding=1),
+			conv_dw_1(inp=16, oup=6 * num_classes, kernel_size=3, padding=1),
 			conv_dw_1(inp=16, oup=6 * num_classes, kernel_size=3, padding=1),
 			conv_dw_1(inp=16, oup=6 * num_classes, kernel_size=3, padding=1),
 		])
